@@ -1,0 +1,21 @@
+{
+  "plan": [
+    {
+      "etapa": "frontend",
+      "tareas": [
+        "Crear la estructura HTML b\u00e1sica con un input para nuevas tareas y una lista para mostrar las existentes.",
+        "Implementar CSS simple para mejorar la presentaci\u00f3n visual de la lista.",
+        "Desarrollar JavaScript que permita a\u00f1adir tareas al array local, mostrarlas en el DOM y guardarlas en LocalStorage.",
+        "Agregar funcionalidad de eliminaci\u00f3n: cada tarea tendr\u00e1 un bot\u00f3n que elimine la entrada del array, actualice el DOM y sincronice con LocalStorage."
+      ]
+    },
+    {
+      "etapa": "backend",
+      "tareas": [
+        "Configurar un servidor Express.js m\u00ednimo que sirva los archivos est\u00e1ticos (index.html, estilos.css, script.js).",
+        "Implementar una ruta GET `/` que devuelva el archivo index.html.",
+        "Agregar rutas est\u00e1ticas para `/css/*` y `/js/*` que apunten a la carpeta de recursos correspondientes."
+      ]
+    }
+  ]
+}
