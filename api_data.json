@@ -1,0 +1,9 @@
+{
+  "api_key_name": "EXTERNAL_API_KEY",
+  "base_url": "https://openweathermap.org/current",
+  "endpoint": "/weather",
+  "example_json": {
+    "temp": 282.55,
+    "description": "clear sky"
+  }
+}
