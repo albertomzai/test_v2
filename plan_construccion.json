@@ -3,17 +3,21 @@
     {
       "etapa": "frontend",
       "tareas": [
-        "Dise\u00f1ar la interfaz con HTML5 y CSS3 para capturar importe, tasa de inter\u00e9s y plazo.",
-        "Implementar l\u00f3gica JavaScript para calcular la tabla de amortizaci\u00f3n usando la f\u00f3rmula de pago fijo.",
-        "Mostrar la tabla en una tabla din\u00e1mica con columnas: Pago, Inter\u00e9s, Principal, Saldo Restante."
+        "Crear un archivo `index.html` con la estructura b\u00e1sica de una p\u00e1gina web.",
+        "Dise\u00f1ar el formulario para que el usuario ingrese: importe del pr\u00e9stamo, tasa de inter\u00e9s anual y plazo en a\u00f1os/meses.",
+        "Agregar un bot\u00f3n para generar la tabla de amortizaci\u00f3n.",
+        "Implementar JavaScript puro (sin frameworks) que calcule la tabla de amortizaci\u00f3n utilizando la f\u00f3rmula de pagos fijos y actualice el DOM con una tabla HTML.",
+        "A\u00f1adir estilos CSS simples dentro del mismo archivo `index.html` para hacer la interfaz legible y responsiva."
       ]
     },
     {
       "etapa": "backend",
       "tareas": [
-        "Crear un servidor Express.js que exponga un endpoint POST /calcularAmortizacion.",
-        "Recibir los par\u00e1metros del frontend (importe, tasa, plazo) y devolver la tabla calculada en formato JSON.",
-        "Implementar validaciones de entrada y manejo de errores."
+        "Crear un proyecto Flask minimalista en Python.",
+        "Configurar una ruta GET `/` que sirva el archivo `index.html` ubicado en la carpeta `templates` o como recurso est\u00e1tico.",
+        "Implementar una ruta POST `/calcular` que reciba los datos del formulario (importe, tasa e inter\u00e9s, plazo) en JSON y devuelva la tabla de amortizaci\u00f3n calculada tambi\u00e9n en JSON.",
+        "Garantizar que el backend no dependa de frameworks externos ni utilice bibliotecas distintas a Flask y sus dependencias est\u00e1ndar.",
+        "A\u00f1adir un archivo `requirements.txt` con Flask como dependencia."
       ]
     }
   ]
