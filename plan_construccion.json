@@ -7,21 +7,26 @@
     {
       "etapa": "backend",
       "tareas": [
-        "Crear un proyecto Flask con virtualenv y dependencias (Flask, Flask-CORS).",
-        "Definir el endpoint POST /api/hipoteca que reciba JSON con campos: monto, tasa_interes, plazo.",
-        "Implementar la l\u00f3gica de c\u00e1lculo de tabla de amortizaci\u00f3n: generar lista de pagos mensuales con detalle de principal, inter\u00e9s y saldo restante.",
-        "Devolver la respuesta en formato JSON con la tabla completa y totales (inter\u00e9s total, pago total).",
-        "Configurar CORS para permitir peticiones desde el frontend local."
+        "Instalar Flask y dependencias (Flask, flask-cors).",
+        "Crear un archivo app.py con la aplicaci\u00f3n Flask.",
+        "Definir el endpoint POST /api/hipoteca que reciba JSON con {monto, tasa, plazo}.",
+        "Implementar la l\u00f3gica de c\u00e1lculo de amortizaci\u00f3n: generar una tabla con cuotas mensuales, intereses y saldo restante.",
+        "Serializar la tabla como lista de objetos JSON y devolverla con status 200.",
+        "Configurar CORS para permitir peticiones desde el dominio del frontend."
       ]
     },
     {
       "etapa": "frontend",
       "tareas": [
-        "Crear un \u00fanico archivo index.html.",
-        "Dise\u00f1ar un formulario con campos: importe del pr\u00e9stamo, tasa de inter\u00e9s anual (en %), plazo en a\u00f1os.",
-        "A\u00f1adir un bot\u00f3n para enviar los datos al endpoint /api/hipoteca mediante fetch POST.",
-        "Mostrar la tabla de amortizaci\u00f3n recibida en la respuesta dentro de una tabla HTML estilizada.",
-        "Incluir mensajes de error y validaci\u00f3n b\u00e1sica del formulario."
+        "Crear un \u00fanico archivo index.html que contenga: ",
+        "- Un formulario con campos de entrada: monto (number), tasa (percentage), plazo (meses).",
+        "- Un bot\u00f3n para enviar la solicitud.",
+        "- Un contenedor <table> donde se mostrar\u00e1 la tabla de amortizaci\u00f3n.",
+        "A\u00f1adir script JavaScript puro dentro del mismo HTML:",
+        "  * Capturar el evento submit, evitar recarga.",
+        "  * Enviar fetch POST a /api/hipoteca con los datos del formulario.",
+        "  * Procesar la respuesta JSON y generar din\u00e1micamente filas de tabla.",
+        "  * Manejar errores (validaciones b\u00e1sicas y mensajes al usuario)."
       ]
     }
   ]
