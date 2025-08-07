@@ -1,65 +1,42 @@
 {
   "api_contract": {
     "ruta": "/api/tasks",
-    "metodo": "GET, POST, PUT, DELETE",
-    "descripcion": "Gesti\u00f3n CRUD de tareas Kanban con persistencia en tasks.json.",
-    "parametros_entrada": {
-      "POST": {
-        "contenido": "string",
-        "estado": "string"
-      },
-      "PUT": {
-        "contenido?": "string",
-        "estado?": "string"
-      }
-    },
+    "metodo": "GET",
+    "descripcion": "Obtiene todas las tareas almacenadas.",
+    "parametros_entrada": {},
     "respuesta_esperada": {
-      "GET": [
-        {
-          "id": "int",
-          "contenido": "string",
-          "estado": "string"
-        }
-      ],
-      "POST, PUT": {
-        "id": "int",
-        "contenido": "string",
-        "estado": "string"
-      },
-      "DELETE": {
-        "mensaje": "string"
-      }
+      "tasks": "[{id, content, status}]"
     }
   },
   "plan": [
     {
       "etapa": "backend",
       "tareas": [
-        "Inicializar un proyecto Flask con estructura de directorios base (app, static, templates).",
-        "Crear una clase modelo Task que represente la entidad con id, contenido y estado.",
-        "Implementar funciones auxiliares para cargar y guardar el archivo tasks.json en disco.",
-        "Definir el endpoint GET '/api/tasks' que devuelve todas las tareas serializadas a JSON.",
-        "Definir el endpoint POST '/api/tasks' que recibe contenido y estado, asigna un id incremental, guarda la tarea y devuelve la representaci\u00f3n completa.",
-        "Definir el endpoint PUT '/api/tasks/<int:id>' que permite actualizar contenido o estado de una tarea existente, persiste los cambios y devuelve la tarea actualizada.",
-        "Definir el endpoint DELETE '/api/tasks/<int:id>' que elimina la tarea del almacenamiento persistente y confirma con un mensaje JSON.",
-        "Agregar manejo de errores HTTP (404 para tareas no encontradas, 400 para datos inv\u00e1lidos).",
-        "Configurar CORS en Flask para permitir solicitudes desde el frontend servido por el mismo host.",
-        "Implementar pruebas unitarias b\u00e1sicas para cada endpoint usando la extensi\u00f3n Flask-Testing."
+        "Inicializar un proyecto Flask con una estructura de directorios b\u00e1sica (app.py, tasks.json).",
+        "Configurar la lectura y escritura de tareas desde el archivo 'tasks.json' usando funciones auxiliares.",
+        "Definir el endpoint GET '/api/tasks' para devolver todas las tareas en formato JSON.",
+        "Crear el endpoint POST '/api/tasks' que reciba 'content' y opcionalmente 'status', genere un identificador \u00fanico, guarde la tarea y devuelva la representaci\u00f3n JSON de la nueva tarea.",
+        "Implementar el endpoint PUT '/api/tasks/<id>' para actualizar el contenido o estado de una tarea existente; validar que la tarea exista antes de modificarla.",
+        "Agregar el endpoint DELETE '/api/tasks/<id>' para eliminar la tarea correspondiente y confirmar la eliminaci\u00f3n con un mensaje HTTP 204.",
+        "Aplicar manejo de errores consistente (404 si la tarea no existe, 400 por datos inv\u00e1lidos).",
+        "Incorporar pruebas unitarias b\u00e1sicas que verifiquen cada ruta y la persistencia en 'tasks.json'.",
+        "Configurar el servidor para ejecutar en modo desarrollo con reloading autom\u00e1tico.",
+        "Documentar el contrato de API dentro del c\u00f3digo usando docstrings y comentarios claros."
       ]
     },
     {
       "etapa": "frontend",
       "tareas": [
-        "Crear un archivo 'index.html' con estructura b\u00e1sica HTML5 y referencia a un CSS interno.",
-        "Dise\u00f1ar el layout de tres columnas verticales utilizando Flexbox o Grid para las secciones 'Por Hacer', 'En Progreso' y 'Hecho'.",
-        "A\u00f1adir un bot\u00f3n de 'Agregar Tarea' que abre un formulario modal inline con campo de texto para el contenido.",
-        "Implementar l\u00f3gica JavaScript para enviar una solicitud POST a '/api/tasks' al crear una nueva tarea y actualizar la vista sin recargar.",
-        "Renderizar cada tarea como tarjeta dentro de su columna correspondiente, mostrando el contenido editable al hacer clic.",
-        "Agregar eventos 'dblclick' o similar para permitir editar el texto de una tarjeta, enviando una solicitud PUT cuando se confirma el cambio.",
-        "Integrar la API Drag\u2011and\u2011Drop nativa del navegador para mover tarjetas entre columnas; capturar el evento drop para actualizar el estado con un PUT a '/api/tasks/<id>'.",
-        "Actualizar din\u00e1micamente la posici\u00f3n de las tarjetas en el DOM despu\u00e9s de cada operaci\u00f3n CRUD sin recargar la p\u00e1gina.",
-        "Implementar manejo b\u00e1sico de errores visuales (mensajes emergentes) cuando una llamada API falle.",
-        "Optimizar el rendimiento asegurando que las operaciones de renderizado se realicen solo sobre los cambios detectados."
+        "Crear un archivo \u00fanico 'index.html' con la estructura b\u00e1sica (doctype, head, body).",
+        "Definir estilos CSS internos que utilicen Flexbox o Grid para tres columnas verticales etiquetadas 'Por Hacer', 'En Progreso' y 'Hecho'.",
+        "Incluir una secci\u00f3n de formulario al inicio de la columna 'Por Hacer' con un input de texto y un bot\u00f3n 'A\u00f1adir tarea'.",
+        "Escribir JavaScript inline que, al cargar la p\u00e1gina, haga una llamada GET a '/api/tasks' y renderice cada tarjeta en su columna correspondiente.",
+        "Implementar el manejador del formulario para enviar POST a '/api/tasks', recargar la vista de tarjetas sin refrescar la p\u00e1gina.",
+        "Agregar eventos de clic sobre las tarjetas para permitir edici\u00f3n inline del contenido; al confirmar, enviar PUT con el nuevo texto.",
+        "Integrar la API Drag\u2011and\u2011Drop nativa (HTML5) para que las tarjetas puedan ser arrastradas entre columnas; actualizar visualmente la posici\u00f3n en el DOM.",
+        "En el evento de drop, capturar el id de la tarjeta y la columna destino, enviar una petici\u00f3n PUT a '/api/tasks/<id>' con el nuevo estado, y actualizar la vista seg\u00fan la respuesta.",
+        "Incluir manejo b\u00e1sico de errores (alertas o mensajes dentro del HTML) para casos donde las peticiones al backend fallen.",
+        "Optimizar el JavaScript modularizando funciones en bloques l\u00f3gicos (fetchTasks, renderTask, createCardElement, etc.) para facilitar mantenimiento y pruebas futuras."
       ]
     }
   ]
