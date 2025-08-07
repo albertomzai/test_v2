@@ -2,154 +2,179 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8" />
-    <title>To-Do List</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lista de Tareas</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 2rem;
-            background-color: #f5f5f5;
-        }
-        h1 { text-align: center; }
-        #todo-form {
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
             display: flex;
             justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: #fff;
+            width: 90%;
+            max-width: 600px;
+            margin-top: 2rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        h1 {
+            text-align: center;
             margin-bottom: 1rem;
         }
-        #new-task-input {
-            width: 60%;
-            padding: 0.5rem;
-            font-size: 1rem;
+
+        #new-task-form {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
         }
-        #add-task-btn {
-            padding: 0.5rem 1rem;
-            margin-left: 0.5rem;
-            font-size: 1rem;
-        }
-        ul { list-style-type: none; padding: 0; }
-        li {
-            background-color: #fff;
-            margin-bottom: 0.5rem;
+
+        #task-input {
+            flex-grow: 1;
             padding: 0.75rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        button {
+            padding: 0.75rem 1rem;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 0.75rem;
+            border-bottom: 1px solid #eee;
         }
+
         .delete-btn {
-            background-color: #ff4d4d;
-            color: #fff;
-            border: none;
-            padding: 0.25rem 0.5rem;
-            cursor: pointer;
-            border-radius: 3px;
+            background-color: #dc3545;
+        }
+
+        @media (max-width: 480px) {
+            button, #task-input {
+                font-size: 0.9rem;
+            }
         }
     </style>
 </head>
 <body>
+<div class="container">
     <h1>Lista de Tareas</h1>
-    <form id="todo-form" onsubmit="return false;">
-        <input type="text" id="new-task-input" placeholder="Nueva tarea..." required />
-        <button type="submit" id="add-task-btn">Añadir</button>
+    <form id="new-task-form" autocomplete="off">
+        <input type="text" id="task-input" placeholder="Nueva tarea..." required />
+        <button type="submit">Añadir</button>
     </form>
-    <ul id="task-list"></ul>
+    <ul id="tasks-list"></ul>
+</div>
+<script>
+    const API_BASE = '/'; // base path for fetch requests
 
-    <script>
-        // Constante para la clave de LocalStorage
-        const LOCAL_STORAGE_KEY = 'todo_tasks';
-
-        /**
-         * Obtiene las tareas almacenadas en LocalStorage.
-         * @returns {Array<string>} Lista de tareas.
-         */
-        function obtener_tareas() {
-            const datos = localStorage.getItem(LOCAL_STORAGE_KEY);
-            return datos ? JSON.parse(datos) : [];
+    /**
+     * Obtiene las tareas desde el backend y actualiza el DOM.
+     */
+    async function cargar_tareas() {
+        try {
+            const response = await fetch(`${API_BASE}tasks`);
+            if (!response.ok) throw new Error('Error al obtener tareas');
+            const tasks = await response.json();
+            render_tasks(tasks);
+        } catch (error) {
+            console.error(error);
         }
+    }
 
-        /**
-         * Guarda la lista de tareas en LocalStorage.
-         * @param {Array<string>} tareas Lista de tareas a guardar.
-         */
-        function guardar_tareas(tareas) {
-            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(tareas));
-        }
-
-        /**
-         * Crea un elemento <li> con la tarea y el botón de eliminar.
-         * @param {string} task Texto de la tarea.
-         */
-        function crear_elemento_tarea(task) {
-            const li = document.createElement('li');
-            li.textContent = task;
-
-            const btn = document.createElement('button');
-            btn.className = 'delete-btn';
-            btn.textContent = 'Eliminar';
-            btn.onclick = function() { eliminar_tarea(task); };
-
-            li.appendChild(btn);
-            return li;
-        }
-
-        /**
-         * Añade una nueva tarea al DOM y actualiza LocalStorage.
-         * @param {string} task Texto de la nueva tarea.
-         */
-        function añadir_tarea(task) {
-            const lista = document.getElementById('task-list');
-            const li = crear_elemento_tarea(task);
-            lista.appendChild(li);
-
-            const tareas = obtener_tareas();
-            tareas.push(task);
-            guardar_tareas(tareas);
-        }
-
-        /**
-         * Elimina una tarea del DOM y actualiza LocalStorage.
-         * @param {string} task Texto de la tarea a eliminar.
-         */
-        function eliminar_tarea(task) {
-            const lista = document.getElementById('task-list');
-            const items = Array.from(lista.children);
-            for (const item of items) {
-                if (item.firstChild.textContent === task) {
-                    lista.removeChild(item);
-                    break;
-                }
-            }
-
-            let tareas = obtener_tareas();
-            tareas = tareas.filter(t => t !== task);
-            guardar_tareas(tareas);
-        }
-
-        /**
-         * Carga las tareas almacenadas al iniciar la página.
-         */
-        function cargar_tareas() {
-            const tareas = obtener_tareas();
-            const lista = document.getElementById('task-list');
-            tareas.forEach(task => {
-                const li = crear_elemento_tarea(task);
-                lista.appendChild(li);
+    /**
+     * Envía una nueva tarea al backend.
+     * @param {string} description - Texto de la tarea.
+     */
+    async function agregar_tarea(description) {
+        try {
+            const response = await fetch(`${API_BASE}tasks`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({description})
             });
+            if (!response.ok) throw new Error('Error al crear tarea');
+            cargar_tareas();
+        } catch (error) {
+            console.error(error);
         }
+    }
 
-        // Manejo del formulario de entrada
-        document.getElementById('todo-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const input = document.getElementById('new-task-input');
-            const taskText = input.value.trim();
-            if (taskText) {
-                añadir_tarea(taskText);
-                input.value = '';
-            }
+    /**
+     * Elimina una tarea del backend.
+     * @param {string} id - Identificador de la tarea.
+     */
+    async function eliminar_tarea(id) {
+        try {
+            const response = await fetch(`${API_BASE}tasks/${id}`, {
+                method: 'DELETE'
+            });
+            if (!response.ok) throw new Error('Error al eliminar tarea');
+            cargar_tareas();
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    /**
+     * Renderiza la lista de tareas en el DOM.
+     * @param {Array} tasks - Array de objetos con id y description.
+     */
+    function render_tasks(tasks) {
+        const list = document.getElementById('tasks-list');
+        list.innerHTML = '';
+        tasks.forEach(task => {
+            const li = document.createElement('li');
+            li.textContent = task.description;
+
+            const delBtn = document.createElement('button');
+            delBtn.className = 'delete-btn';
+            delBtn.textContent = 'Eliminar';
+            delBtn.addEventListener('click', () => eliminar_tarea(task.id));
+
+            li.appendChild(delBtn);
+            list.appendChild(li);
         });
+    }
 
-        // Inicializar la lista al cargar la página
-        window.addEventListener('load', cargar_tareas);
-    </script>
+    document.getElementById('new-task-form').addEventListener('submit', event => {
+        event.preventDefault();
+        const input = document.getElementById('task-input');
+        if (input.value.trim() !== '') {
+            agregar_tarea(input.value.trim());
+            input.value = '';
+        }
+    });
+
+    // Inicializar cargando tareas al cargar la página
+    cargar_tareas();
+</script>
 </body>
 </html>
