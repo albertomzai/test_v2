@@ -4,99 +4,104 @@
     <meta charset="UTF-8">
     <title>Simulador de Hipotecas</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 2rem; }
-        form { display: flex; flex-direction: column; max-width: 400px; }
-        label { margin-top: 1rem; }
-        input[type="number"] { padding: 0.5rem; font-size: 1rem; }
-        button { margin-top: 1.5rem; padding: 0.75rem; font-size: 1rem; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; margin-top: 2rem; }
-        th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: right; }
-        th { background-color: #f4f4f4; }
+        body {font-family: Arial, sans-serif; margin: 20px; background:#f9f9f9;}
+        h1 {text-align:center; color:#333;}
+        form {max-width:400px; margin:auto; padding:20px; background:white; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,.1);}
+        label {display:block; margin-top:10px; font-weight:bold;}
+        input[type=number] {width:100%; padding:8px; margin-top:5px; border:1px solid #ccc; border-radius:4px;}
+        button {margin-top:15px; width:100%; padding:10px; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer; font-size:16px;}
+        button:hover {background:#0056b3;}
+        table {width:100%; margin-top:20px; border-collapse:collapse;}
+        th, td {border:1px solid #ddd; padding:8px; text-align:right;}
+        th {background:#007bff; color:white;}
+        @media (max-width:600px){form{padding:15px;}button{font-size:14px;}}
     </style>
 </head>
 <body>
     <h1>Simulador de Hipotecas</h1>
-    <form id="amortizacionForm">
-        <label for="importe">Importe del préstamo:</label>
-        <input type="number" id="importe" name="importe" required min="0" step="0.01">
+    <form id="mortgage-form">
+        <label for="principal">Importe del préstamo (€)</label>
+        <input type="number" id="principal" name="principal" step="0.01" min="0" required>
 
-        <label for="tasa_interes">Tasa de interés (% anual):</label>
-        <input type="number" id="tasa_interes" name="tasa_interes" required min="0" step="0.01">
+        <label for="annual_rate">Tasa de interés anual (%)</label>
+        <input type="number" id="annual_rate" name="annual_rate" step="0.01" min="0" required>
 
-        <label for="plazo">Plazo (meses):</label>
-        <input type="number" id="plazo" name="plazo" required min="1" step="1">
+        <label for="years">Plazo (años)</label>
+        <input type="number" id="years" name="years" step="1" min="1" required>
 
-        <button type="submit">Calcular amortización</button>
+        <button type="submit">Generar tabla</button>
     </form>
+    <div id="amortization-table"></div>
 
-    <table id="tablaAmortizacion" style="display:none;">
-        <thead>
-            <tr>
-                <th>Pago #</th>
-                <th>Interés</th>
-                <th>Principal</th>
-                <th>Saldo Restante</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-
-    <script type="module">
-        const API_ENDPOINT = '/calcularAmortizacion';
+    <script>
+        const form = document.getElementById('mortgage-form');
+        const tableDiv = document.getElementById('amortization-table');
 
         /**
-         * Envía los parámetros del formulario al backend y actualiza la tabla.
-         * @param {Event} event Evento de envío del formulario.
+         * Calcula la tabla de amortización para un préstamo con pagos fijos.
+         * @param {number} principal - Importe del préstamo.
+         * @param {number} annual_rate - Tasa anual en porcentaje.
+         * @param {number} years - Plazo en años.
+         * @returns {Array<Object>} Tabla con cada pago mensual.
          */
-        async function manejar_formulario(event) {
-            event.preventDefault();
-            const importe = parseFloat(document.getElementById('importe').value);
-            const tasa_interes = parseFloat(document.getElementById('tasa_interes').value);
-            const plazo = parseInt(document.getElementById('plazo').value, 10);
+        function calculate_amortization(principal, annual_rate, years) {
+            const monthly_rate = annual_rate / 100 / 12;
+            const months = years * 12;
+            const payment = principal * (monthly_rate * Math.pow(1 + monthly_rate, months)) /
+                            (Math.pow(1 + monthly_rate, months) - 1);
 
-            try {
-                const response = await fetch(API_ENDPOINT, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ importe, tasa_interes, plazo })
+            let balance = principal;
+            const table = [];
+
+            for (let i = 1; i <= months; i++) {
+                const interest = balance * monthly_rate;
+                const principal_payment = payment - interest;
+                balance -= principal_payment;
+                if (balance < 0) balance = 0;
+
+                table.push({
+                    month: i,
+                    payment: payment.toFixed(2),
+                    principal: principal_payment.toFixed(2),
+                    interest: interest.toFixed(2),
+                    balance: balance.toFixed(2)
                 });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`Error del servidor: ${errorText}`);
-                }
-
-                const data = await response.json();
-                mostrar_tabla(data.tabla_amortizacion);
-            } catch (err) {
-                console.error(err);
-                alert('Hubo un error al calcular la amortización.');
             }
+            return table;
         }
 
         /**
          * Renderiza la tabla de amortización en el DOM.
-         * @param {Array<Object>} tabla Array con los pagos.
+         * @param {Array<Object>} data - Datos de la tabla.
          */
-        function mostrar_tabla(tabla) {
-            const tbody = document.querySelector('#tablaAmortizacion tbody');
-            tbody.innerHTML = '';
-
-            tabla.forEach((pago, index) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td>${pago.interes.toFixed(2)}</td>
-                    <td>${pago.principal.toFixed(2)}</td>
-                    <td>${pago.saldo_restante.toFixed(2)}</td>
-                `;
-                tbody.appendChild(tr);
+        function render_table(data) {
+            if (!data.length) return;
+            let html = '<table><thead><tr>' +
+                        ['Mes', 'Pago', 'Principal', 'Interés', 'Saldo'].map(col => `<th>${col}</th>`).join('') +
+                        '</tr></thead><tbody>';
+            data.forEach(row => {
+                html += '<tr>' +
+                        Object.values(row).map(val => `<td>${val}</td>`).join('') +
+                        '</tr>';
             });
-
-            document.getElementById('tablaAmortizacion').style.display = 'table';
+            html += '</tbody></table>';
+            tableDiv.innerHTML = html;
         }
 
-        document.getElementById('amortizacionForm').addEventListener('submit', manejar_formulario);
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const principal = parseFloat(document.getElementById('principal').value);
+            const annual_rate = parseFloat(document.getElementById('annual_rate').value);
+            const years = parseInt(document.getElementById('years').value, 10);
+
+            if (isNaN(principal) || isNaN(annual_rate) || isNaN(years)) {
+                alert('Por favor ingrese valores válidos.');
+                return;
+            }
+
+            const table = calculate_amortization(principal, annual_rate, years);
+            render_table(table);
+        });
     </script>
 </body>
 </html>
