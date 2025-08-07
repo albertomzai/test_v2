@@ -1,23 +1,27 @@
 {
+  "api_contract": {
+    "ruta": "/api/hipoteca",
+    "metodo": "POST"
+  },
   "plan": [
-    {
-      "etapa": "frontend",
-      "tareas": [
-        "Crear un archivo `index.html` con la estructura b\u00e1sica de una p\u00e1gina web.",
-        "Dise\u00f1ar el formulario para que el usuario ingrese: importe del pr\u00e9stamo, tasa de inter\u00e9s anual y plazo en a\u00f1os/meses.",
-        "Agregar un bot\u00f3n para generar la tabla de amortizaci\u00f3n.",
-        "Implementar JavaScript puro (sin frameworks) que calcule la tabla de amortizaci\u00f3n utilizando la f\u00f3rmula de pagos fijos y actualice el DOM con una tabla HTML.",
-        "A\u00f1adir estilos CSS simples dentro del mismo archivo `index.html` para hacer la interfaz legible y responsiva."
-      ]
-    },
     {
       "etapa": "backend",
       "tareas": [
-        "Crear un proyecto Flask minimalista en Python.",
-        "Configurar una ruta GET `/` que sirva el archivo `index.html` ubicado en la carpeta `templates` o como recurso est\u00e1tico.",
-        "Implementar una ruta POST `/calcular` que reciba los datos del formulario (importe, tasa e inter\u00e9s, plazo) en JSON y devuelva la tabla de amortizaci\u00f3n calculada tambi\u00e9n en JSON.",
-        "Garantizar que el backend no dependa de frameworks externos ni utilice bibliotecas distintas a Flask y sus dependencias est\u00e1ndar.",
-        "A\u00f1adir un archivo `requirements.txt` con Flask como dependencia."
+        "Crear un proyecto Flask con virtualenv y requerimientos (Flask, flask-cors).",
+        "Definir el endpoint POST /api/hipoteca que reciba JSON con: importe, tasa_interes, plazo.",
+        "Implementar la l\u00f3gica de c\u00e1lculo de amortizaci\u00f3n: generar tabla con cuota mensual, intereses y principal pagado por cada periodo.",
+        "Devolver la tabla como JSON con estructura { \"cuotas\": [ {mes, pago, interes, principal, saldo} ] }.",
+        "Agregar manejo b\u00e1sico de errores (validaciones de datos, respuesta 400 en caso de entrada inv\u00e1lida).",
+        "Configurar CORS para permitir peticiones desde el frontend local."
+      ]
+    },
+    {
+      "etapa": "frontend",
+      "tareas": [
+        "Crear un \u00fanico archivo index.html con un formulario simple: importe, tasa_interes, plazo.",
+        "Agregar script JavaScript que capture la submit del formulario, env\u00ede una solicitud fetch POST al endpoint /api/hipoteca y maneje la respuesta JSON.",
+        "Renderizar en el DOM una tabla HTML mostrando la amortizaci\u00f3n recibida.",
+        "Incluir estilos m\u00ednimos con CSS interno para una presentaci\u00f3n clara."
       ]
     }
   ]
