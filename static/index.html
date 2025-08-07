@@ -4,104 +4,104 @@
     <meta charset="UTF-8">
     <title>Simulador de Hipotecas</title>
     <style>
-        body {font-family: Arial, sans-serif; margin: 20px; background:#f9f9f9;}
-        h1 {text-align:center; color:#333;}
-        form {max-width:400px; margin:auto; padding:20px; background:white; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,.1);}
-        label {display:block; margin-top:10px; font-weight:bold;}
-        input[type=number] {width:100%; padding:8px; margin-top:5px; border:1px solid #ccc; border-radius:4px;}
-        button {margin-top:15px; width:100%; padding:10px; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer; font-size:16px;}
-        button:hover {background:#0056b3;}
-        table {width:100%; margin-top:20px; border-collapse:collapse;}
-        th, td {border:1px solid #ddd; padding:8px; text-align:right;}
-        th {background:#007bff; color:white;}
-        @media (max-width:600px){form{padding:15px;}button{font-size:14px;}}
+        body { font-family: Arial, sans-serif; margin: 2rem; }
+        form { max-width: 400px; margin-bottom: 1.5rem; }
+        label { display: block; margin-top: 0.75rem; }
+        input[type="number"] { width: 100%; padding: 0.5rem; box-sizing: border-box; }
+        button { margin-top: 1rem; padding: 0.6rem 1.2rem; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: right; }
+        th { background-color: #f4f4f4; }
     </style>
 </head>
 <body>
     <h1>Simulador de Hipotecas</h1>
-    <form id="mortgage-form">
-        <label for="principal">Importe del préstamo (€)</label>
-        <input type="number" id="principal" name="principal" step="0.01" min="0" required>
-
-        <label for="annual_rate">Tasa de interés anual (%)</label>
-        <input type="number" id="annual_rate" name="annual_rate" step="0.01" min="0" required>
-
-        <label for="years">Plazo (años)</label>
-        <input type="number" id="years" name="years" step="1" min="1" required>
-
-        <button type="submit">Generar tabla</button>
+    <form id="hipoteca-form">
+        <label for="importe">Importe del préstamo (€):
+            <input type="number" id="importe" name="importe" step="0.01" required min="0">
+        </label>
+        <label for="tasa_interes">Tasa de interés anual (%):
+            <input type="number" id="tasa_interes" name="tasa_interes" step="0.01" required min="0">
+        </label>
+        <label for="plazo">Plazo (meses):
+            <input type="number" id="plazo" name="plazo" step="1" required min="1">
+        </label>
+        <button type="submit">Calcular</button>
     </form>
-    <div id="amortization-table"></div>
+
+    <div id="resultado"></div>
 
     <script>
-        const form = document.getElementById('mortgage-form');
-        const tableDiv = document.getElementById('amortization-table');
-
         /**
-         * Calcula la tabla de amortización para un préstamo con pagos fijos.
-         * @param {number} principal - Importe del préstamo.
-         * @param {number} annual_rate - Tasa anual en porcentaje.
-         * @param {number} years - Plazo en años.
-         * @returns {Array<Object>} Tabla con cada pago mensual.
+         * Envía los datos del formulario al endpoint /api/hipoteca y muestra la tabla de amortización.
          */
-        function calculate_amortization(principal, annual_rate, years) {
-            const monthly_rate = annual_rate / 100 / 12;
-            const months = years * 12;
-            const payment = principal * (monthly_rate * Math.pow(1 + monthly_rate, months)) /
-                            (Math.pow(1 + monthly_rate, months) - 1);
+        document.getElementById('hipoteca-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
 
-            let balance = principal;
-            const table = [];
+            const importe = parseFloat(document.getElementById('importe').value);
+            const tasa_interes = parseFloat(document.getElementById('tasa_interes').value);
+            const plazo = parseInt(document.getElementById('plazo').value, 10);
 
-            for (let i = 1; i <= months; i++) {
-                const interest = balance * monthly_rate;
-                const principal_payment = payment - interest;
-                balance -= principal_payment;
-                if (balance < 0) balance = 0;
+            const payload = { importe, tasa_interes, plazo };
 
-                table.push({
-                    month: i,
-                    payment: payment.toFixed(2),
-                    principal: principal_payment.toFixed(2),
-                    interest: interest.toFixed(2),
-                    balance: balance.toFixed(2)
+            try {
+                const response = await fetch('/api/hipoteca', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
                 });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Error ${response.status}: ${errorText}`);
+                }
+
+                const data = await response.json();
+                renderTable(data.cuotas);
+            } catch (err) {
+                document.getElementById('resultado').innerHTML = `<p style="color:red;">${err.message}</p>`;
             }
-            return table;
-        }
+        });
 
         /**
-         * Renderiza la tabla de amortización en el DOM.
-         * @param {Array<Object>} data - Datos de la tabla.
+         * Genera una tabla HTML a partir de la lista de cuotas.
+         * @param {Array} cuotas - Lista de objetos con mes, pago, interes, principal y saldo.
          */
-        function render_table(data) {
-            if (!data.length) return;
-            let html = '<table><thead><tr>' +
-                        ['Mes', 'Pago', 'Principal', 'Interés', 'Saldo'].map(col => `<th>${col}</th>`).join('') +
-                        '</tr></thead><tbody>';
-            data.forEach(row => {
-                html += '<tr>' +
-                        Object.values(row).map(val => `<td>${val}</td>`).join('') +
-                        '</tr>';
-            });
-            html += '</tbody></table>';
-            tableDiv.innerHTML = html;
-        }
-
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const principal = parseFloat(document.getElementById('principal').value);
-            const annual_rate = parseFloat(document.getElementById('annual_rate').value);
-            const years = parseInt(document.getElementById('years').value, 10);
-
-            if (isNaN(principal) || isNaN(annual_rate) || isNaN(years)) {
-                alert('Por favor ingrese valores válidos.');
+        function render_table(cuotas) {
+            if (!Array.isArray(cuotas) || cuotas.length === 0) {
+                document.getElementById('resultado').innerHTML = '<p>No hay datos para mostrar.</p>';
                 return;
             }
 
-            const table = calculate_amortization(principal, annual_rate, years);
-            render_table(table);
-        });
+            let tableHtml = `<table><thead><tr>`;
+            const headers = ['Mes', 'Pago (€)', 'Interés (€)', 'Principal (€)', 'Saldo (€)'];
+            headers.forEach(header => {
+                tableHtml += `<th>${header}</th>`;
+            });
+            tableHtml += `</tr></thead><tbody>`;
+
+            cuotas.forEach(cuota => {
+                tableHtml += `<tr>`;
+                tableHtml += `<td style="text-align:center;">${cuota.mes}</td>`;
+                tableHtml += `<td>${formatNumber(cuota.pago)}</td>`;
+                tableHtml += `<td>${formatNumber(cuota.interes)}</td>`;
+                tableHtml += `<td>${formatNumber(cuota.principal)}</td>`;
+                tableHtml += `<td>${formatNumber(cuota.saldo)}</td>`;
+                tableHtml += `</tr>`;
+            });
+
+            tableHtml += `</tbody></table>`;
+            document.getElementById('resultado').innerHTML = tableHtml;
+        }
+
+        /**
+         * Formatea un número a dos decimales con separador de miles.
+         * @param {number} value - Número a formatear.
+         * @returns {string}
+         */
+        function format_number(value) {
+            return value.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
     </script>
 </body>
 </html>
