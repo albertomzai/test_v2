@@ -1,44 +1,48 @@
 {
   "api_contract": {
     "ruta": "/api/tasks",
-    "metodo": "GET, POST",
-    "descripcion": "Endpoint para obtener todas las tareas o crear una nueva.",
-    "parametros_entrada_POST": {
-      "contenido": "string",
-      "estado": "string"
-    },
-    "respuesta_GET": "[{id: int, contenido: string, estado: string}]",
-    "respuesta_POST": "{id: int, contenido: string, estado: string}"
+    "metodo": "GET",
+    "descripcion": "Devuelve todas las tareas existentes.",
+    "parametros_entrada": {},
+    "respuesta_esperada": [
+      {
+        "id": "integer",
+        "content": "string",
+        "status": "string"
+      }
+    ]
   },
   "plan": [
     {
       "etapa": "backend",
       "tareas": [
-        "Crear la estructura de directorios del proyecto Flask con un archivo principal app.py.",
-        "Configurar el entorno virtual y declarar dependencias en requirements.txt (Flask).",
-        "Implementar una clase TaskManager que maneje la carga, guardado y manipulaci\u00f3n de tareas desde tasks.json.",
-        "Definir la ruta GET /api/tasks para devolver todas las tareas como JSON.",
-        "Definir la ruta POST /api/tasks para crear una tarea; validar entrada y asignar un ID incremental.",
-        "Implementar la l\u00f3gica PUT /api/tasks/<id> para actualizar contenido o estado; manejar casos de no encontrado.",
-        "Implementar DELETE /api/tasks/<id> para eliminar una tarea existente; confirmar existencia previa.",
-        "Asegurar que todas las rutas devuelvan respuestas HTTP adecuadas y JSON con cabeceras CORS permitiendo solicitudes desde el frontend local.",
-        "Agregar pruebas unitarias simples usando unittest para cada endpoint b\u00e1sico.",
-        "Configurar logging de nivel INFO en la aplicaci\u00f3n Flask para trazabilidad de operaciones CRUD."
+        "Inicializar un proyecto Flask con la estructura de directorios est\u00e1ndar (app, static, templates).",
+        "Crear el archivo 'tasks.json' en la ra\u00edz del proyecto y asegurar su existencia al iniciar la aplicaci\u00f3n.",
+        "Implementar una funci\u00f3n para cargar las tareas desde 'tasks.json' al inicio del servidor.",
+        "Implementar una funci\u00f3n para guardar autom\u00e1ticamente las tareas modificadas de vuelta a 'tasks.json'.",
+        "Definir el endpoint GET '/api/tasks' que devuelve la lista completa de tareas en formato JSON.",
+        "Definir el endpoint POST '/api/tasks' que recibe un cuerpo con 'content' y opcionalmente 'status', asigna un ID \u00fanico, guarda la tarea y devuelve la tarea creada.",
+        "Definir el endpoint PUT '/api/tasks/<int:id>' que actualiza el contenido o estado de una tarea existente y devuelve la tarea actualizada.",
+        "Definir el endpoint DELETE '/api/tasks/<int:id>' que elimina la tarea correspondiente y confirma la eliminaci\u00f3n en JSON.",
+        "Agregar manejo de errores para solicitudes con IDs no existentes y validar los campos obligatorios del cuerpo.",
+        "Configurar CORS para permitir peticiones desde 'index.html' alojado localmente.",
+        "Implementar pruebas unitarias simples para cada endpoint usando Flask's test client.",
+        "Documentar la API en un README breve dentro del repositorio."
       ]
     },
     {
       "etapa": "frontend",
       "tareas": [
-        "Crear index.html con estructura b\u00e1sica: encabezado, tres columnas verticales etiquetadas 'Por Hacer', 'En Progreso' y 'Hecho'.",
-        "Incluir un formulario simple al final de la columna 'Por Hacer' para a\u00f1adir nuevas tarjetas; el campo debe ser un input de texto.",
-        "Escribir CSS en l\u00ednea dentro de <style> usando Flexbox o Grid para distribuir las columnas y tarjetas con estilos claros.",
-        "Implementar JavaScript que, al cargar la p\u00e1gina, haga una petici\u00f3n GET /api/tasks y renderice cada tarea como tarjeta dentro de su columna correspondiente.",
-        "Agregar un evento click a cada tarjeta que permita editar el texto en modo inline; al confirmar, enviar PUT /api/tasks/<id> con el nuevo contenido.",
-        "Integrar drag-and-drop mediante la API DragEvent; marcar tarjetas con atributos data-id y data-estado para identificar.",
-        "Al soltar una tarjeta en otra columna, actualizar su estado localmente y enviar una petici\u00f3n PUT /api/tasks/<id> indicando el nuevo estado.",
-        "Incluir manejo de errores b\u00e1sicos: mostrar alertas o mensajes en la interfaz cuando las llamadas a la API fallen.",
-        "Asegurar que el script sea autocontenida dentro del archivo index.html sin dependencias externas.",
-        "Probar la interacci\u00f3n completa (crear, editar, mover, eliminar) en un navegador moderno para confirmar funcionalidad."
+        "Crear el archivo 'index.html' con una estructura b\u00e1sica de encabezado, tres columnas y un bot\u00f3n para agregar tareas.",
+        "Agregar estilos CSS inline o en una etiqueta <style> que utilicen Flexbox o Grid para organizar las columnas verticalmente.",
+        "Implementar un formulario modal o popup sencillo dentro del HTML para capturar el contenido de nuevas tareas.",
+        "Escribir JavaScript ES6 dentro de una etiqueta <script> que, al cargar la p\u00e1gina, realice una llamada GET a '/api/tasks' y renderice las tarjetas en sus columnas correspondientes.",
+        "A\u00f1adir eventos click a cada tarjeta que permitan editar su texto mediante un prompt o campo editable inline.",
+        "Implementar drag-and-drop nativo del navegador (HTML5 Drag Events) para permitir mover tarjetas entre columnas.",
+        "Al completar el drop, enviar una solicitud PUT al backend con la nueva 'status' y actualizar la vista seg\u00fan la respuesta.",
+        "Agregar manejo de errores en las llamadas AJAX para mostrar mensajes de alerta simples si el servidor responde con error.",
+        "Garantizar que todas las interacciones sean accesibles (e.g., focus management) y que el c\u00f3digo sea modular mediante funciones reutilizables dentro del mismo archivo.",
+        "Probar la aplicaci\u00f3n localmente contra el backend Flask para asegurar la correcta persistencia en 'tasks.json'."
       ]
     }
   ]
