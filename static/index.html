@@ -1,117 +1,261 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8"/>
-<title>Mini Trello</title>
-<style>
-  body{font-family:Arial,sans-serif;margin:0;padding:0;background:#f4f5f7;}
-  .board{display:flex;height:100vh;padding:20px;gap:10px;box-sizing:border-box;}
-  .column{background:#e2e4e6;border-radius:3px;flex:1;display:flex;flex-direction:column;overflow-y:auto;}
-  .column h2{text-align:center;background:#dfe1e5;padding:10px;margin:0;font-size:1rem;color:#172b4d;border-bottom:1px solid #cfd8dc;}
-  .task{background:white;border-radius:3px;margin:5px 10px;padding:10px;cursor:pointer;box-shadow:0 1px 0 rgba(9,30,66,.25);user-select:none;}
-  .task[draggable="true"]{opacity:0.8;}
-  .add-task{background:#5aac44;color:white;border:none;padding:10px;margin:5px auto;cursor:pointer;width:90%;border-radius:3px;font-size:1rem;}
-  .add-task:hover{background:#519839;}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini-Trello Kanban</title>
+    <style>
+        :root {
+            --color-bg: #f4f5f7;
+            --color-card: #fff;
+            --color-primary: #0079bf;
+            --color-text: #333;
+        }
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            width: 90%;
+            max-width: 1200px;
+            padding-top: 20px;
+        }
+        .column {
+            background-color: #ebecf0;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            min-height: 80vh;
+        }
+        .column h2 {
+            margin: 0;
+            padding: 10px;
+            background-color: #dfe1e6;
+            border-bottom: 1px solid #c1c7cf;
+            font-size: 1.1rem;
+        }
+        .card-list {
+            flex: 1;
+            padding: 8px;
+            overflow-y: auto;
+        }
+        .card {
+            background-color: var(--color-card);
+            border-radius: 3px;
+            padding: 10px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 0 rgba(9,30,66,.25);
+            cursor: grab;
+        }
+        .card.dragging {
+            opacity: 0.5;
+        }
+        .add-task {
+            display: flex;
+            padding: 8px;
+            border-top: 1px solid #c1c7cf;
+        }
+        .add-task input[type="text"] {
+            flex: 1;
+            padding: 6px;
+            border: 1px solid #dfe1e6;
+            border-radius: 3px;
+            margin-right: 4px;
+        }
+        .add-task button {
+            background-color: var(--color-primary);
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .message {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: #444;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 3px;
+            display: none;
+        }
+    </style>
 </head>
 <body>
 <div class="board">
-  <div class="column" data-state="Por Hacer">
-    <h2>Por Hacer</h2>
-    <button id="new-task-btn" class="add-task">+ Nueva tarea</button>
-    <div id="por-hacer"></div>
-  </div>
-  <div class="column" data-state="En Progreso">
-    <h2>En Progreso</h2>
-    <div id="en-progreso"></div>
-  </div>
-  <div class="column" data-state="Hecho">
-    <h2>Hecho</h2>
-    <div id="hecho"></div>
-  </div>
+    <div class="column" data-status="Por Hacer">
+        <h2>Por Hacer</h2>
+        <form id="new-task-form" class="add-task">
+            <input type="text" id="new-task-input" placeholder="Nueva tarea..." required>
+            <button type="submit">Añadir tarea</button>
+        </form>
+        <div class="card-list" id="por-hacer-list"></div>
+    </div>
+    <div class="column" data-status="En Progreso">
+        <h2>En Progreso</h2>
+        <div class="card-list" id="en-progreso-list"></div>
+    </div>
+    <div class="column" data-status="Hecho">
+        <h2>Hecho</h2>
+        <div class="card-list" id="hecho-list"></div>
+    </div>
 </div>
-<script type="module">
-const API_URL = '/api/tasks';
+<div id="message" class="message"></div>
+<script>
+// Variables globales
+const apiUrl = '/api/tasks';
+let draggedCardId = null;
 
-// Fetch tasks from backend and render them
-async function cargarTareas(){
-  try{
-    const res = await fetch(API_URL);
-    if(!res.ok) throw new Error('Error al obtener tareas');
-    const tareas = await res.json();
-    // Clear columns
-    document.querySelectorAll('.column > div[id]').forEach(col=>col.innerHTML='');
-    tareas.forEach(mostrarTarea);
-  }catch(err){
-    console.error(err);
-  }
+function showMessage(msg, timeout = 3000) {
+    const el = document.getElementById('message');
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, timeout);
 }
 
-// Create a task element and append to correct column
-function mostrarTarea(task){
-  const colDiv = document.getElementById(sanitizeState(task.state));
-  if(!colDiv) return;
-  const card = document.createElement('div');
-  card.className='task';
-  card.draggable=true;
-  card.dataset.id=task.id;
-  card.textContent=task.content;
-
-  // Drag events
-  card.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',task.id);});
-  card.addEventListener('dblclick',()=>editarTarea(card));
-
-  colDiv.appendChild(card);
+async function fetchTasks() {
+    try {
+        const res = await fetch(apiUrl);
+        if (!res.ok) throw new Error('Error al cargar tareas');
+        const data = await res.json();
+        return data.tasks;
+    } catch (err) {
+        showMessage(err.message);
+        return [];
+    }
 }
 
-// Sanitize state string to match element id
-function sanitizeState(state){return state.toLowerCase().replace(/\s+/g,'-');}
+function createCardElement(task) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.setAttribute('draggable', true);
+    card.dataset.id = task.id;
+    card.textContent = task.content;
 
-// Add new task
-document.getElementById('new-task-btn').addEventListener('click',async()=>{
-  const content = prompt('Contenido de la tarea:');
-  if(!content) return;
-  try{
-    const res = await fetch(API_URL,{
-      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content,state:'Por Hacer'})
+    // Drag events
+    card.addEventListener('dragstart', () => {
+        draggedCardId = task.id;
+        card.classList.add('dragging');
     });
-    if(!res.ok) throw new Error('Error al crear tarea');
-    const task = await res.json();
-    mostrarTarea(task);
-  }catch(err){console.error(err);}
+    card.addEventListener('dragend', () => {
+        draggedCardId = null;
+        card.classList.remove('dragging');
+    });
+
+    // Click to edit
+    card.addEventListener('click', () => {
+        const newText = prompt('Editar tarea:', task.content);
+        if (newText !== null && newText.trim() !== '' && newText !== task.content) {
+            updateTaskContent(task.id, newText.trim());
+        }
+    });
+
+    return card;
+}
+
+async function renderTasks(tasks) {
+    const columns = {
+        'Por Hacer': document.getElementById('por-hacer-list'),
+        'En Progreso': document.getElementById('en-progreso-list'),
+        'Hecho': document.getElementById('hecho-list')
+    };
+    // Clear
+    Object.values(columns).forEach(col => col.innerHTML = '');
+    tasks.forEach(task => {
+        const card = createCardElement(task);
+        columns[task.status].appendChild(card);
+    });
+}
+
+async function addTask(content) {
+    try {
+        const res = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content })
+        });
+        if (!res.ok) throw new Error('Error al crear tarea');
+        const task = await res.json();
+        const columns = {
+            'Por Hacer': document.getElementById('por-hacer-list'),
+            'En Progreso': document.getElementById('en-progreso-list'),
+            'Hecho': document.getElementById('hecho-list')
+        };
+        const card = createCardElement(task);
+        columns[task.status].appendChild(card);
+    } catch (err) {
+        showMessage(err.message);
+    }
+}
+
+async function updateTaskContent(id, newContent) {
+    try {
+        const res = await fetch(`${apiUrl}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: newContent })
+        });
+        if (!res.ok) throw new Error('Error al actualizar tarea');
+        showMessage('Tarea actualizada');
+    } catch (err) {
+        showMessage(err.message);
+    }
+}
+
+async function updateTaskStatus(id, newStatus) {
+    try {
+        const res = await fetch(`${apiUrl}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+        });
+        if (!res.ok) throw new Error('Error al mover tarea');
+        const task = await res.json();
+        // Re-render all tasks to reflect new order
+        const tasks = await fetchTasks();
+        renderTasks(tasks);
+    } catch (err) {
+        showMessage(err.message);
+    }
+}
+
+// Drag and drop on columns
+document.querySelectorAll('.column').forEach(col => {
+    col.addEventListener('dragover', e => e.preventDefault());
+    col.addEventListener('drop', async () => {
+        if (draggedCardId) {
+            const newStatus = col.dataset.status;
+            await updateTaskStatus(draggedCardId, newStatus);
+        }
+    });
 });
 
-// Inline edit
-async function editarTarea(card){
-  const newContent = prompt('Editar contenido:',card.textContent);
-  if(newContent===null||newContent===card.textContent) return;
-  const id=card.dataset.id;
-  try{
-    const res = await fetch(`${API_URL}/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:newContent})});
-    if(!res.ok) throw new Error('Error al actualizar tarea');
-    card.textContent=newContent;
-  }catch(err){console.error(err);}
-}
-
-// Drag & Drop handling for columns
-document.querySelectorAll('.column').forEach(col=>{
-  col.addEventListener('dragover',e=>{e.preventDefault();});
-  col.addEventListener('drop',async e=>{
+// Form submit
+document.getElementById('new-task-form').addEventListener('submit', e => {
     e.preventDefault();
-    const id = e.dataTransfer.getData('text/plain');
-    const card = document.querySelector(`.task[data-id="${id}"]`);
-    if(!card) return;
-    const newState = col.dataset.state;
-    try{
-      const res = await fetch(`${API_URL}/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({state:newState})});
-      if(!res.ok) throw new Error('Error al mover tarea');
-      col.querySelector('#'+sanitizeState(newState)).appendChild(card);
-    }catch(err){console.error(err);}
-  });
+    const input = document.getElementById('new-task-input');
+    const content = input.value.trim();
+    if (content) {
+        addTask(content);
+        input.value = '';
+    }
 });
 
 // Initial load
-cargarTareas();
+(async () => {
+    const tasks = await fetchTasks();
+    renderTasks(tasks);
+})();
 </script>
 </body>
 </html>
