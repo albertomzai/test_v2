@@ -2,129 +2,120 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8" />
-    <title>Simulador de Hipotecas</title>
+    <title>Lista de Tareas</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 2rem; }
-        form { margin-bottom: 1.5rem; }
-        label { display: block; margin-top: 0.5rem; }
-        input[type="number"] { width: 100%; padding: 0.4rem; margin-top: 0.2rem; }
-        button { margin-top: 1rem; padding: 0.6rem 1.2rem; }
-        #mensaje_error { color: red; margin-top: 0.5rem; }
-        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-        th, td { border: 1px solid #ccc; padding: 0.4rem; text-align: right; }
-        th { background-color: #f2f2f2; }
+        #task-form { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+        #tasks-list { list-style: none; padding: 0; }
+        .task-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem;
+                      border: 1px solid #ccc; margin-bottom: 0.25rem; }
+        button { cursor: pointer; background-color: #e74c3c; color: white; border: none; padding: 0.2rem 0.4rem; }
     </style>
 </head>
 <body>
-    <h1>Simulador de Hipotecas</h1>
-
-    <form id="hipoteca_form">
-        <label for="monto_input">Monto del préstamo (€):
-            <input type="number" id="monto_input" name="monto" min="0" step="any" required />
-        </label>
-        <label for="tasa_input">Tasa de interés (% anual):
-            <input type="number" id="tasa_input" name="tasa" min="0" step="any" required />
-        </label>
-        <label for="plazo_input">Plazo (meses):
-            <input type="number" id="plazo_input" name="plazo" min="1" step="1" required />
-        </label>
-        <button type="submit">Calcular</button>
+    <h1>Lista de Tareas</h1>
+    <form id="task-form">
+        <input type="text" id="new-task" placeholder="Nueva tarea" required />
+        <button type="submit">Añadir</button>
     </form>
+    <ul id="tasks-list"></ul>
 
-    <div id="mensaje_error"></div>
+    <script>
+        // Constantes de almacenamiento local y API
+        const LOCAL_STORAGE_KEY = 'todo_tasks';
+        const API_ENDPOINT = '/api/tareas';
 
-    <table id="tabla_amortizacion">
-        <thead>
-            <tr>
-                <th>Cuota #</th>
-                <th>Monto de Cuota (€)</th>
-                <th>Interés (€)</th>
-                <th>Principal (€)</n>
-                <th>Saldo Restante (€)</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-
-    <script type="text/javascript">
         /**
-         * Captura el envío del formulario, evita la recarga y envía los datos al backend.
+         * Carga las tareas desde el localStorage.
+         * @returns {Array<string>} Lista de tareas.
          */
-        document.getElementById('hipoteca_form').addEventListener('submit', function (event) {
-            event.preventDefault(); // Evita la recarga de página
-            const monto = parseFloat(document.getElementById('monto_input').value);
-            const tasa = parseFloat(document.getElementById('tasa_input').value);
-            const plazo = parseInt(document.getElementById('plazo_input').value, 10);
+        function cargar_tareas() {
+            const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+            return stored ? JSON.parse(stored) : [];
+        }
 
-            // Validaciones básicas
-            if (isNaN(monto) || monto <= 0) {
-                mostrar_error('El monto debe ser un número positivo.');
-                return;
-            }
-            if (isNaN(tasa) || tasa < 0) {
-                mostrar_error('La tasa debe ser un número no negativo.');
-                return;
-            }
-            if (isNaN(plazo) || plazo <= 0) {
-                mostrar_error('El plazo debe ser al menos 1 mes.');
-                return;
-            }
+        /**
+         * Guarda las tareas en el localStorage.
+         * @param {Array<string>} tasks Lista de tareas a guardar.
+         */
+        function guardar_tareas(tasks) {
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(tasks));
+        }
 
-            // Construir cuerpo de la petición
-            const datos = { monto: monto, tasa: tasa, plazo: plazo };
+        /**
+         * Renderiza la lista completa en el DOM.
+         * @param {Array<string>} tasks Lista de tareas.
+         */
+        function renderizar_tareas(tasks) {
+            const list = document.getElementById('tasks-list');
+            list.innerHTML = '';
+            tasks.forEach((task, index) => {
+                const li = document.createElement('li');
+                li.className = 'task-item';
+                li.textContent = task;
 
-            fetch('/api/hipoteca', {
+                const btn = document.createElement('button');
+                btn.textContent = 'Eliminar';
+                btn.onclick = () => eliminar_tarea(index);
+
+                li.appendChild(btn);
+                list.appendChild(li);
+            });
+        }
+
+        /**
+         * Envía una petición al backend para añadir o eliminar una tarea.
+         * @param {string} action 'add' o 'remove'
+         * @param {Object} data Datos de la tarea.
+         */
+        function enviar_api(action, data) {
+            fetch(API_ENDPOINT, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(datos)
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Error en la respuesta del servidor.');
-                }
-                return response.json();
-            })
-            .then(respuesta => {
-                // Limpiar mensajes y tabla
-                document.getElementById('mensaje_error').textContent = '';
-                const tbody = document.querySelector('#tabla_amortizacion tbody');
-                tbody.innerHTML = '';
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action, ...data })
+            }).catch(err => console.error('Error al comunicar con la API:', err));
+        }
 
-                respuesta.forEach(fila => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${fila.cuota}</td>
-                        <td>${formatCurrency(fila.monto_cuota)}</td>
-                        <td>${formatCurrency(fila.interes)}</td>
-                        <td>${formatCurrency(fila.principal)}</td>
-                        <td>${formatCurrency(fila.saldo_restante)}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            })
-            .catch(error => {
-                mostrar_error(error.message || 'Error inesperado.');
+        /**
+         * Añade una nueva tarea.
+         * @param {string} task Texto de la tarea.
+         */
+        function agregar_tarea(task) {
+            const tasks = cargar_tareas();
+            tasks.push(task);
+            guardar_tareas(tasks);
+            renderizar_tareas(tasks);
+            enviar_api('add', { task });
+        }
+
+        /**
+         * Elimina una tarea por índice.
+         * @param {number} index Índice de la tarea a eliminar.
+         */
+        function eliminar_tarea(index) {
+            const tasks = cargar_tareas();
+            const removed = tasks.splice(index, 1)[0];
+            guardar_tareas(tasks);
+            renderizar_tareas(tasks);
+            enviar_api('remove', { task: removed });
+        }
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            const initialTasks = cargar_tareas();
+            renderizar_tareas(initialTasks);
+
+            const form = document.getElementById('task-form');
+            form.addEventListener('submit', e => {
+                e.preventDefault();
+                const input = document.getElementById('new-task');
+                const taskText = input.value.trim();
+                if (taskText) {
+                    agregar_tarea(taskText);
+                    input.value = '';
+                }
             });
         });
-
-        /**
-         * Muestra un mensaje de error al usuario.
-         * @param {string} msg - Mensaje a mostrar.
-         */
-        function mostrar_error(msg) {
-            document.getElementById('mensaje_error').textContent = msg;
-        }
-
-        /**
-         * Formatea número como moneda en euros.
-         * @param {number} valor
-         * @returns {string}
-         */
-        function formatCurrency(valor) {
-            return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(valor);
-        }
     </script>
 </body>
 </html>
