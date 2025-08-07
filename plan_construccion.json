@@ -3,18 +3,19 @@
     {
       "etapa": "frontend",
       "tareas": [
-        "Dise\u00f1ar la estructura HTML b\u00e1sica con un contenedor para la lista de tareas y un formulario de entrada.",
-        "Crear estilos CSS simples para una presentaci\u00f3n limpia.",
-        "Implementar JavaScript que permita a\u00f1adir nuevas tareas al DOM y guardarlas en LocalStorage.",
-        "Agregar funcionalidad para eliminar tareas del DOM y actualizar LocalStorage."
+        "Dise\u00f1ar la estructura HTML b\u00e1sica para la lista de tareas.",
+        "Estilizar con CSS para una interfaz limpia y responsiva.",
+        "Implementar JavaScript que permita a\u00f1adir nuevas tareas al DOM.",
+        "A\u00f1adir funcionalidad para eliminar tareas del DOM.",
+        "Persistir las tareas en localStorage cada vez que se a\u00f1adan o eliminen."
       ]
     },
     {
       "etapa": "backend",
       "tareas": [
-        "Configurar un servidor Express.js m\u00ednimo con Node.js.",
-        "Definir una ruta GET / que sirva el archivo index.html.",
-        "A\u00f1adir middleware de CORS para permitir peticiones desde el frontend local."
+        "Configurar un servidor Express.js m\u00ednimo que sirva el archivo index.html y los recursos est\u00e1ticos.",
+        "Crear una ruta GET `/tasks` que devuelva las tareas almacenadas en localStorage (simulada con JSON).",
+        "Crear rutas POST `/tasks` y DELETE `/tasks/:id` para a\u00f1adir y eliminar tareas, actualizando la respuesta de `localStorage`."
       ]
     }
   ]
