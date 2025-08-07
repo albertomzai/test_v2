@@ -1,35 +1,42 @@
 {
   "api_contract": {
     "ruta": "/api/tasks",
-    "metodo": [
-      "GET",
-      "POST"
-    ]
+    "metodo": "GET",
+    "descripcion": "Devuelve todas las tareas existentes.",
+    "parametros_entrada": {},
+    "respuesta_esperada": {
+      "tasks": "[{id, content, status}]"
+    }
   },
   "plan": [
     {
       "etapa": "backend",
       "tareas": [
-        "Instalar Flask y crear la estructura b\u00e1sica de la aplicaci\u00f3n.",
-        "Crear un modelo Task con id, contenido y estado (Por Hacer / En Progreso / Hecho).",
-        "Implementar funciones para cargar y guardar tareas en 'tasks.json' usando JSON.",
-        "Definir los endpoints REST: GET /api/tasks, POST /api/tasks, PUT /api/tasks/<id>, DELETE /api/tasks/<id>.",
-        "Agregar manejo de errores (404, 400) y validaci\u00f3n de datos entrantes.",
-        "Configurar CORS para permitir peticiones desde el frontend.",
-        "Probar la API con curl o Postman antes del despliegue."
+        "Inicializar un proyecto Flask con una estructura de directorios b\u00e1sica para el backend.",
+        "Crear un archivo 'app.py' que inicialice la aplicaci\u00f3n Flask y configure CORS si es necesario.",
+        "Definir una clase o funci\u00f3n utilitaria para leer y escribir en 'tasks.json', garantizando concurrencia segura mediante bloqueo de archivos.",
+        "Implementar el endpoint GET '/api/tasks' que lea todas las tareas desde 'tasks.json' y devuelva un JSON con la lista.",
+        "Implementar el endpoint POST '/api/tasks' que reciba 'content' y opcionalmente 'status', genere un identificador \u00fanico, agregue la tarea a 'tasks.json' y retorne la tarea creada.",
+        "Implementar el endpoint PUT '/api/tasks/<id>' que actualice 'content' o 'status' de la tarea indicada, guardando los cambios en 'tasks.json' y retornando la tarea actualizada.",
+        "Implementar el endpoint DELETE '/api/tasks/<id>' que elimine la tarea correspondiente de 'tasks.json' y devuelva una confirmaci\u00f3n.",
+        "Agregar manejo de errores para casos de ID inexistente, datos inv\u00e1lidos o problemas de I/O, devolviendo c\u00f3digos HTTP adecuados.",
+        "Configurar la aplicaci\u00f3n para ejecutar en modo desarrollo con reloading habilitado y documentar c\u00f3mo iniciar el servidor.",
+        "Escribir pruebas unitarias b\u00e1sicas para cada endpoint utilizando Flask's test client, asegurando que las operaciones CRUD funcionen correctamente."
       ]
     },
     {
       "etapa": "frontend",
       "tareas": [
-        "Crear un archivo \u00fanico 'index.html' con estructura HTML5 y CSS Grid/Flexbox para las tres columnas.",
-        "Dise\u00f1ar tarjetas de tareas con estilos claros y estados visuales diferentes por columna.",
-        "Implementar JavaScript ES6: fetch API para interactuar con los endpoints del backend.",
-        "Agregar funcionalidad para crear nuevas tareas mediante un formulario o bot\u00f3n en la columna 'Por Hacer'.",
-        "Permitir edici\u00f3n inline del contenido de una tarjeta al hacer doble clic y enviar actualizaci\u00f3n v\u00eda PUT.",
-        "Integrar drag\u2011and\u2011drop (HTML5 Drag and Drop API) para mover tarjetas entre columnas.",
-        "Actualizar el estado de la tarea tras un drop enviando un PUT con el nuevo estado.",
-        "Persistir cambios en el servidor y refrescar la vista sin recargar la p\u00e1gina."
+        "Crear un archivo 'index.html' con la estructura b\u00e1sica de HTML5 y meta tags necesarios.",
+        "Incorporar estilos CSS inline o en una etiqueta <style> para definir el layout de tres columnas usando Flexbox, con clases '.column', '.card', y '.add-button'.",
+        "Agregar un contenedor principal que contenga las tres columnas etiquetadas 'Por Hacer', 'En Progreso' y 'Hecho'.",
+        "Implementar una secci\u00f3n en la columna 'Por Hacer' con un bot\u00f3n '+ A\u00f1adir Tarea' que, al hacer clic, muestre un formulario modal o inline para ingresar el contenido de la nueva tarea.",
+        "Escribir JavaScript ES6 dentro de <script> que defina funciones para: cargar tareas del backend (GET), renderizar tarjetas en las columnas correspondientes, crear nuevas tareas (POST), actualizar tarjetas (PUT) y eliminar tarjetas (DELETE).",
+        "Agregar l\u00f3gica de edici\u00f3n inline: al hacer doble clic sobre el texto de una tarjeta se reemplaza por un campo input editable; al perder foco o presionar Enter, se env\u00eda una solicitud PUT para actualizar el contenido.",
+        "Implementar drag-and-drop usando la API Drag and Drop nativa: establecer atributos draggable en las tarjetas y manejar eventos 'dragstart', 'dragover' y 'drop' en las columnas para cambiar el estado de la tarjeta.",
+        "Al completar un drop, enviar una llamada PUT al backend con el nuevo estado (columna) y actualizar la vista seg\u00fan la respuesta.",
+        "Incluir manejo b\u00e1sico de errores en el frontend: mostrar alertas o mensajes dentro del UI cuando las peticiones fallan.",
+        "Asegurar que el archivo 'index.html' sea autocontenido, sin dependencias externas de librer\u00edas JS/CSS, para cumplir con la restricci\u00f3n de simplicidad."
       ]
     }
   ]
