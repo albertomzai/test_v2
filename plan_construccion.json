@@ -1,42 +1,44 @@
 {
   "api_contract": {
     "ruta": "/api/tasks",
-    "metodo": "GET",
-    "descripcion": "Obtiene todas las tareas almacenadas.",
-    "parametros_entrada": {},
-    "respuesta_esperada": {
-      "tasks": "[{id, content, status}]"
-    }
+    "metodo_GET": "GET",
+    "descripcion_GET": "Devuelve todas las tareas existentes.",
+    "metodo_POST": "POST",
+    "descripcion_POST": "Crea una nueva tarea con contenido y estado inicial.",
+    "metodo_PUT_id": "PUT /api/tasks/<id>",
+    "descripcion_PUT_id": "Actualiza el contenido o estado de una tarea existente.",
+    "metodo_DELETE_id": "DELETE /api/tasks/<id>",
+    "descripcion_DELETE_id": "Elimina la tarea especificada."
   },
   "plan": [
     {
       "etapa": "backend",
       "tareas": [
-        "Inicializar un proyecto Flask con una estructura de directorios b\u00e1sica (app.py, tasks.json).",
-        "Configurar la lectura y escritura de tareas desde el archivo 'tasks.json' usando funciones auxiliares.",
-        "Definir el endpoint GET '/api/tasks' para devolver todas las tareas en formato JSON.",
-        "Crear el endpoint POST '/api/tasks' que reciba 'content' y opcionalmente 'status', genere un identificador \u00fanico, guarde la tarea y devuelva la representaci\u00f3n JSON de la nueva tarea.",
-        "Implementar el endpoint PUT '/api/tasks/<id>' para actualizar el contenido o estado de una tarea existente; validar que la tarea exista antes de modificarla.",
-        "Agregar el endpoint DELETE '/api/tasks/<id>' para eliminar la tarea correspondiente y confirmar la eliminaci\u00f3n con un mensaje HTTP 204.",
-        "Aplicar manejo de errores consistente (404 si la tarea no existe, 400 por datos inv\u00e1lidos).",
-        "Incorporar pruebas unitarias b\u00e1sicas que verifiquen cada ruta y la persistencia en 'tasks.json'.",
-        "Configurar el servidor para ejecutar en modo desarrollo con reloading autom\u00e1tico.",
-        "Documentar el contrato de API dentro del c\u00f3digo usando docstrings y comentarios claros."
+        "Inicializar un proyecto Flask con una estructura de directorios adecuada para el backend.",
+        "Crear un modelo simple en Python que represente una tarea con campos id, contenido y estado.",
+        "Implementar la carga inicial del archivo 'tasks.json' al arrancar la aplicaci\u00f3n y guardarlo tras cada modificaci\u00f3n.",
+        "Definir el endpoint GET '/api/tasks' que devuelve todas las tareas en formato JSON.",
+        "Definir el endpoint POST '/api/tasks' que recibe un cuerpo con contenido y estado, asigna un id \u00fanico, agrega la tarea a la lista y persiste los datos.",
+        "Definir el endpoint PUT '/api/tasks/<id>' que actualiza el contenido o estado de una tarea existente seg\u00fan el cuerpo recibido y guarda los cambios.",
+        "Definir el endpoint DELETE '/api/tasks/<id>' que elimina la tarea correspondiente y persiste la actualizaci\u00f3n.",
+        "Agregar manejo de errores para solicitudes inv\u00e1lidas, IDs no encontrados y problemas de lectura/escritura del archivo JSON.",
+        "Configurar CORS en Flask para permitir peticiones desde el dominio donde se servir\u00e1 'index.html'.",
+        "Implementar pruebas unitarias b\u00e1sicas que verifiquen cada endpoint y la persistencia en 'tasks.json'."
       ]
     },
     {
       "etapa": "frontend",
       "tareas": [
-        "Crear un archivo \u00fanico 'index.html' con la estructura b\u00e1sica (doctype, head, body).",
-        "Definir estilos CSS internos que utilicen Flexbox o Grid para tres columnas verticales etiquetadas 'Por Hacer', 'En Progreso' y 'Hecho'.",
-        "Incluir una secci\u00f3n de formulario al inicio de la columna 'Por Hacer' con un input de texto y un bot\u00f3n 'A\u00f1adir tarea'.",
-        "Escribir JavaScript inline que, al cargar la p\u00e1gina, haga una llamada GET a '/api/tasks' y renderice cada tarjeta en su columna correspondiente.",
-        "Implementar el manejador del formulario para enviar POST a '/api/tasks', recargar la vista de tarjetas sin refrescar la p\u00e1gina.",
-        "Agregar eventos de clic sobre las tarjetas para permitir edici\u00f3n inline del contenido; al confirmar, enviar PUT con el nuevo texto.",
-        "Integrar la API Drag\u2011and\u2011Drop nativa (HTML5) para que las tarjetas puedan ser arrastradas entre columnas; actualizar visualmente la posici\u00f3n en el DOM.",
-        "En el evento de drop, capturar el id de la tarjeta y la columna destino, enviar una petici\u00f3n PUT a '/api/tasks/<id>' con el nuevo estado, y actualizar la vista seg\u00fan la respuesta.",
-        "Incluir manejo b\u00e1sico de errores (alertas o mensajes dentro del HTML) para casos donde las peticiones al backend fallen.",
-        "Optimizar el JavaScript modularizando funciones en bloques l\u00f3gicos (fetchTasks, renderTask, createCardElement, etc.) para facilitar mantenimiento y pruebas futuras."
+        "Crear un archivo 'index.html' con estructura b\u00e1sica HTML5, t\u00edtulo y referencias a CSS y JS inline.",
+        "Definir estilos CSS utilizando Flexbox o Grid para tres columnas verticales etiquetadas 'Por Hacer', 'En Progreso' y 'Hecho'.",
+        "Agregar un bot\u00f3n de 'A\u00f1adir Tarea' que abre un peque\u00f1o formulario modal o inline para introducir el contenido de una nueva tarjeta.",
+        "Implementar la l\u00f3gica JavaScript para enviar una solicitud POST a '/api/tasks' al crear una tarea, recargar la vista con la respuesta y a\u00f1adir la tarjeta a la columna 'Por Hacer'.",
+        "Renderizar las tarjetas existentes en sus columnas correspondientes utilizando datos obtenidos mediante un GET inicial a '/api/tasks'.",
+        "Habilitar edici\u00f3n inline de una tarjeta al hacer clic sobre su contenido, enviando una solicitud PUT a '/api/tasks/<id>' con el nuevo texto y actualizando la vista.",
+        "Integrar drag-and-drop usando la API HTML5 Drag and Drop para permitir mover tarjetas entre columnas.",
+        "Al completar un drop, enviar una solicitud PUT a '/api/tasks/<id>' con el estado actualizado seg\u00fan la columna destino y reflejar el cambio en la interfaz.",
+        "Incluir manejo b\u00e1sico de errores y mensajes de usuario para fallos de red o respuestas inesperadas del backend.",
+        "Optimizar la aplicaci\u00f3n para que sea totalmente autocontenida dentro de 'index.html', evitando dependencias externas."
       ]
     }
   ]
