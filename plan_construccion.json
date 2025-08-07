@@ -7,21 +7,21 @@
     {
       "etapa": "backend",
       "tareas": [
-        "Crear un proyecto Flask con virtualenv y requerimientos (Flask, flask-cors).",
-        "Definir el endpoint POST /api/hipoteca que reciba JSON con: importe, tasa_interes, plazo.",
-        "Implementar la l\u00f3gica de c\u00e1lculo de amortizaci\u00f3n: generar tabla con cuota mensual, intereses y principal pagado por cada periodo.",
-        "Devolver la tabla como JSON con estructura { \"cuotas\": [ {mes, pago, interes, principal, saldo} ] }.",
-        "Agregar manejo b\u00e1sico de errores (validaciones de datos, respuesta 400 en caso de entrada inv\u00e1lida).",
+        "Crear un proyecto Flask con virtualenv y dependencias (Flask, Flask-CORS).",
+        "Definir el endpoint POST /api/hipoteca que reciba JSON con campos: monto, tasa_interes, plazo.",
+        "Implementar la l\u00f3gica de c\u00e1lculo de tabla de amortizaci\u00f3n: generar lista de pagos mensuales con detalle de principal, inter\u00e9s y saldo restante.",
+        "Devolver la respuesta en formato JSON con la tabla completa y totales (inter\u00e9s total, pago total).",
         "Configurar CORS para permitir peticiones desde el frontend local."
       ]
     },
     {
       "etapa": "frontend",
       "tareas": [
-        "Crear un \u00fanico archivo index.html con un formulario simple: importe, tasa_interes, plazo.",
-        "Agregar script JavaScript que capture la submit del formulario, env\u00ede una solicitud fetch POST al endpoint /api/hipoteca y maneje la respuesta JSON.",
-        "Renderizar en el DOM una tabla HTML mostrando la amortizaci\u00f3n recibida.",
-        "Incluir estilos m\u00ednimos con CSS interno para una presentaci\u00f3n clara."
+        "Crear un \u00fanico archivo index.html.",
+        "Dise\u00f1ar un formulario con campos: importe del pr\u00e9stamo, tasa de inter\u00e9s anual (en %), plazo en a\u00f1os.",
+        "A\u00f1adir un bot\u00f3n para enviar los datos al endpoint /api/hipoteca mediante fetch POST.",
+        "Mostrar la tabla de amortizaci\u00f3n recibida en la respuesta dentro de una tabla HTML estilizada.",
+        "Incluir mensajes de error y validaci\u00f3n b\u00e1sica del formulario."
       ]
     }
   ]
