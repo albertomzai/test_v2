@@ -1,50 +1,44 @@
 {
   "api_contract": {
     "ruta": "/api/tasks",
-    "metodo": "GET, POST, PUT, DELETE",
-    "descripcion": "API RESTful para la gesti\u00f3n de tareas Kanban.",
+    "metodo": "GET, POST",
+    "descripcion": "Endpoint para obtener todas las tareas o crear una nueva.",
     "parametros_entrada_POST": {
       "contenido": "string",
       "estado": "string"
     },
-    "parametros_entrada_PUT": {
-      "contenido?": "string",
-      "estado?": "string"
-    },
     "respuesta_GET": "[{id: int, contenido: string, estado: string}]",
-    "respuesta_POST": "{id: int, contenido: string, estado: string}",
-    "respuesta_PUT": "{id: int, contenido: string, estado: string}",
-    "respuesta_DELETE": "{}"
+    "respuesta_POST": "{id: int, contenido: string, estado: string}"
   },
   "plan": [
     {
       "etapa": "backend",
       "tareas": [
-        "Inicializar un proyecto Flask con la estructura de directorios base (app.py, tasks.json).",
-        "Crear una funci\u00f3n para cargar las tareas desde 'tasks.json' al iniciar el servidor.",
-        "Implementar una funci\u00f3n que guarde autom\u00e1ticamente el estado actual de las tareas en 'tasks.json' despu\u00e9s de cada operaci\u00f3n modificadora.",
-        "Definir la ruta GET '/api/tasks' que devuelve todas las tareas como JSON con c\u00f3digo 200.",
-        "Definir la ruta POST '/api/tasks' que recibe 'contenido' y opcionalmente 'estado', asigna un ID incremental, guarda la tarea y devuelve el objeto creado con c\u00f3digo 201.",
-        "Definir la ruta PUT '/api/tasks/<int:id>' que actualiza los campos 'contenido' o 'estado' de la tarea especificada; valida la existencia del ID y devuelve el objeto actualizado con c\u00f3digo 200.",
-        "Definir la ruta DELETE '/api/tasks/<int:id>' que elimina la tarea correspondiente; verifica la existencia y responde con c\u00f3digo 204.",
-        "A\u00f1adir manejo de errores: respuestas JSON con mensaje y c\u00f3digos 400/404 cuando corresponda.",
-        "Configurar CORS para permitir peticiones desde el mismo dominio del frontend.",
-        "Incluir pruebas unitarias simples (opcional) que verifiquen la correcta carga, guardado y rutas CRUD."
+        "Crear la estructura de directorios del proyecto Flask con un archivo principal app.py.",
+        "Configurar el entorno virtual y declarar dependencias en requirements.txt (Flask).",
+        "Implementar una clase TaskManager que maneje la carga, guardado y manipulaci\u00f3n de tareas desde tasks.json.",
+        "Definir la ruta GET /api/tasks para devolver todas las tareas como JSON.",
+        "Definir la ruta POST /api/tasks para crear una tarea; validar entrada y asignar un ID incremental.",
+        "Implementar la l\u00f3gica PUT /api/tasks/<id> para actualizar contenido o estado; manejar casos de no encontrado.",
+        "Implementar DELETE /api/tasks/<id> para eliminar una tarea existente; confirmar existencia previa.",
+        "Asegurar que todas las rutas devuelvan respuestas HTTP adecuadas y JSON con cabeceras CORS permitiendo solicitudes desde el frontend local.",
+        "Agregar pruebas unitarias simples usando unittest para cada endpoint b\u00e1sico.",
+        "Configurar logging de nivel INFO en la aplicaci\u00f3n Flask para trazabilidad de operaciones CRUD."
       ]
     },
     {
       "etapa": "frontend",
       "tareas": [
-        "Crear un archivo 'index.html' con estructura b\u00e1sica HTML5, t\u00edtulo y enlace a estilos internos.",
-        "Definir un contenedor principal con tres columnas verticales usando CSS Flexbox o Grid: 'Por Hacer', 'En Progreso', 'Hecho'.",
-        "Agregar un bot\u00f3n o formulario en la columna 'Por Hacer' para crear nuevas tarjetas; al enviar, hacer una petici\u00f3n POST a '/api/tasks' y actualizar el DOM.",
-        "Implementar la representaci\u00f3n de cada tarea como una tarjeta con texto editable: al hacer clic se convierte en un campo de entrada que guarda cambios v\u00eda PUT cuando se pierde foco o se presiona Enter.",
-        "A\u00f1adir soporte drag-and-drop usando la API HTML5; establecer los atributos 'draggable' en las tarjetas y manejar eventos 'dragstart', 'dragover', 'drop' para moverlas entre columnas.",
-        "En el evento 'drop', actualizar el estado de la tarjeta mediante una petici\u00f3n PUT a '/api/tasks/<id>' con el nuevo estado correspondiente.",
-        "Al cargar la p\u00e1gina, realizar una petici\u00f3n GET a '/api/tasks' y poblar las columnas seg\u00fan el campo 'estado' de cada tarea.",
-        "Incluir manejo b\u00e1sico de errores en JavaScript: mostrar mensajes al usuario cuando las peticiones fallan.",
-        "Mantener todo el c\u00f3digo JavaScript inline dentro de 'index.html' para cumplir con la restricci\u00f3n de un solo archivo.",
-        "Aplicar estilos CSS minimalistas que aseguren legibilidad y responsividad sin depender de librer\u00edas externas."
+        "Crear index.html con estructura b\u00e1sica: encabezado, tres columnas verticales etiquetadas 'Por Hacer', 'En Progreso' y 'Hecho'.",
+        "Incluir un formulario simple al final de la columna 'Por Hacer' para a\u00f1adir nuevas tarjetas; el campo debe ser un input de texto.",
+        "Escribir CSS en l\u00ednea dentro de <style> usando Flexbox o Grid para distribuir las columnas y tarjetas con estilos claros.",
+        "Implementar JavaScript que, al cargar la p\u00e1gina, haga una petici\u00f3n GET /api/tasks y renderice cada tarea como tarjeta dentro de su columna correspondiente.",
+        "Agregar un evento click a cada tarjeta que permita editar el texto en modo inline; al confirmar, enviar PUT /api/tasks/<id> con el nuevo contenido.",
+        "Integrar drag-and-drop mediante la API DragEvent; marcar tarjetas con atributos data-id y data-estado para identificar.",
+        "Al soltar una tarjeta en otra columna, actualizar su estado localmente y enviar una petici\u00f3n PUT /api/tasks/<id> indicando el nuevo estado.",
+        "Incluir manejo de errores b\u00e1sicos: mostrar alertas o mensajes en la interfaz cuando las llamadas a la API fallen.",
+        "Asegurar que el script sea autocontenida dentro del archivo index.html sin dependencias externas.",
+        "Probar la interacci\u00f3n completa (crear, editar, mover, eliminar) en un navegador moderno para confirmar funcionalidad."
       ]
     }
   ]
