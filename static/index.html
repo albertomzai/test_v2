@@ -1,180 +1,102 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lista de Tareas</title>
+    <meta charset="UTF-8">
+    <title>Simulador de Hipotecas</title>
     <style>
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            background-color: #f4f4f9;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-        }
-
-        .container {
-            background-color: #fff;
-            width: 90%;
-            max-width: 600px;
-            margin-top: 2rem;
-            padding: 1.5rem;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-        }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 1rem;
-        }
-
-        #new-task-form {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-
-        #task-input {
-            flex-grow: 1;
-            padding: 0.75rem;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 1rem;
-        }
-
-        button {
-            padding: 0.75rem 1rem;
-            background-color: #28a745;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-
-        button:hover {
-            background-color: #218838;
-        }
-
-        ul {
-            list-style-type: none;
-            padding: 0;
-        }
-
-        li {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem;
-            border-bottom: 1px solid #eee;
-        }
-
-        .delete-btn {
-            background-color: #dc3545;
-        }
-
-        @media (max-width: 480px) {
-            button, #task-input {
-                font-size: 0.9rem;
-            }
-        }
+        body { font-family: Arial, sans-serif; margin: 2rem; }
+        form { display: flex; flex-direction: column; max-width: 400px; }
+        label { margin-top: 1rem; }
+        input[type="number"] { padding: 0.5rem; font-size: 1rem; }
+        button { margin-top: 1.5rem; padding: 0.75rem; font-size: 1rem; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin-top: 2rem; }
+        th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: right; }
+        th { background-color: #f4f4f4; }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>Lista de Tareas</h1>
-    <form id="new-task-form" autocomplete="off">
-        <input type="text" id="task-input" placeholder="Nueva tarea..." required />
-        <button type="submit">Añadir</button>
+    <h1>Simulador de Hipotecas</h1>
+    <form id="amortizacionForm">
+        <label for="importe">Importe del préstamo:</label>
+        <input type="number" id="importe" name="importe" required min="0" step="0.01">
+
+        <label for="tasa_interes">Tasa de interés (% anual):</label>
+        <input type="number" id="tasa_interes" name="tasa_interes" required min="0" step="0.01">
+
+        <label for="plazo">Plazo (meses):</label>
+        <input type="number" id="plazo" name="plazo" required min="1" step="1">
+
+        <button type="submit">Calcular amortización</button>
     </form>
-    <ul id="tasks-list"></ul>
-</div>
-<script>
-    const API_BASE = '/'; // base path for fetch requests
 
-    /**
-     * Obtiene las tareas desde el backend y actualiza el DOM.
-     */
-    async function cargar_tareas() {
-        try {
-            const response = await fetch(`${API_BASE}tasks`);
-            if (!response.ok) throw new Error('Error al obtener tareas');
-            const tasks = await response.json();
-            render_tasks(tasks);
-        } catch (error) {
-            console.error(error);
+    <table id="tablaAmortizacion" style="display:none;">
+        <thead>
+            <tr>
+                <th>Pago #</th>
+                <th>Interés</th>
+                <th>Principal</th>
+                <th>Saldo Restante</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script type="module">
+        const API_ENDPOINT = '/calcularAmortizacion';
+
+        /**
+         * Envía los parámetros del formulario al backend y actualiza la tabla.
+         * @param {Event} event Evento de envío del formulario.
+         */
+        async function manejar_formulario(event) {
+            event.preventDefault();
+            const importe = parseFloat(document.getElementById('importe').value);
+            const tasa_interes = parseFloat(document.getElementById('tasa_interes').value);
+            const plazo = parseInt(document.getElementById('plazo').value, 10);
+
+            try {
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ importe, tasa_interes, plazo })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Error del servidor: ${errorText}`);
+                }
+
+                const data = await response.json();
+                mostrar_tabla(data.tabla_amortizacion);
+            } catch (err) {
+                console.error(err);
+                alert('Hubo un error al calcular la amortización.');
+            }
         }
-    }
 
-    /**
-     * Envía una nueva tarea al backend.
-     * @param {string} description - Texto de la tarea.
-     */
-    async function agregar_tarea(description) {
-        try {
-            const response = await fetch(`${API_BASE}tasks`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({description})
+        /**
+         * Renderiza la tabla de amortización en el DOM.
+         * @param {Array<Object>} tabla Array con los pagos.
+         */
+        function mostrar_tabla(tabla) {
+            const tbody = document.querySelector('#tablaAmortizacion tbody');
+            tbody.innerHTML = '';
+
+            tabla.forEach((pago, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${pago.interes.toFixed(2)}</td>
+                    <td>${pago.principal.toFixed(2)}</td>
+                    <td>${pago.saldo_restante.toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
             });
-            if (!response.ok) throw new Error('Error al crear tarea');
-            cargar_tareas();
-        } catch (error) {
-            console.error(error);
+
+            document.getElementById('tablaAmortizacion').style.display = 'table';
         }
-    }
 
-    /**
-     * Elimina una tarea del backend.
-     * @param {string} id - Identificador de la tarea.
-     */
-    async function eliminar_tarea(id) {
-        try {
-            const response = await fetch(`${API_BASE}tasks/${id}`, {
-                method: 'DELETE'
-            });
-            if (!response.ok) throw new Error('Error al eliminar tarea');
-            cargar_tareas();
-        } catch (error) {
-            console.error(error);
-        }
-    }
-
-    /**
-     * Renderiza la lista de tareas en el DOM.
-     * @param {Array} tasks - Array de objetos con id y description.
-     */
-    function render_tasks(tasks) {
-        const list = document.getElementById('tasks-list');
-        list.innerHTML = '';
-        tasks.forEach(task => {
-            const li = document.createElement('li');
-            li.textContent = task.description;
-
-            const delBtn = document.createElement('button');
-            delBtn.className = 'delete-btn';
-            delBtn.textContent = 'Eliminar';
-            delBtn.addEventListener('click', () => eliminar_tarea(task.id));
-
-            li.appendChild(delBtn);
-            list.appendChild(li);
-        });
-    }
-
-    document.getElementById('new-task-form').addEventListener('submit', event => {
-        event.preventDefault();
-        const input = document.getElementById('task-input');
-        if (input.value.trim() !== '') {
-            agregar_tarea(input.value.trim());
-            input.value = '';
-        }
-    });
-
-    // Inicializar cargando tareas al cargar la página
-    cargar_tareas();
-</script>
+        document.getElementById('amortizacionForm').addEventListener('submit', manejar_formulario);
+    </script>
 </body>
 </html>
