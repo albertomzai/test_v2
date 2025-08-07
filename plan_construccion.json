@@ -1,19 +1,31 @@
 {
+  "api_contract": {
+    "ruta": "/api/tasks",
+    "metodo": "GET"
+  },
   "plan": [
     {
       "etapa": "backend",
       "tareas": [
-        "Crear una aplicaci\u00f3n Flask b\u00e1sica con un endpoint POST /api/tareas que reciba la acci\u00f3n (a\u00f1adir o eliminar) y los datos de la tarea.",
-        "Implementar l\u00f3gica interna para almacenar las tareas en memoria durante la sesi\u00f3n del servidor.",
-        "Configurar CORS para permitir peticiones desde el frontend local."
+        "Instalar Flask y dependencias b\u00e1sicas.",
+        "Crear la estructura de carpetas: app/, static/, templates/.",
+        "Implementar un modelo simple Task con id, contenido y estado.",
+        "Persistir las tareas en tasks.json; cargar al iniciar y guardar tras cada operaci\u00f3n.",
+        "Desarrollar los endpoints REST seg\u00fan requisitos (GET, POST, PUT, DELETE).",
+        "Configurar CORS para permitir llamadas desde el frontend.",
+        "A\u00f1adir pruebas unitarias b\u00e1sicas para asegurar la integridad de CRUD."
       ]
     },
     {
       "etapa": "frontend",
       "tareas": [
-        "Crear un \u00fanico archivo index.html que contenga la estructura de la lista de tareas y los controles de a\u00f1adir/eliminar.",
-        "Utilizar JavaScript puro para manejar eventos del formulario, actualizar el DOM y enviar peticiones AJAX al endpoint /api/tareas.",
-        "Persistir las tareas en localStorage del navegador para mantenerlas entre recargas sin necesidad de backend persistente."
+        "Crear index.html con una estructura b\u00e1sica HTML5 y referencias a CSS/JS internos.",
+        "Dise\u00f1ar las tres columnas usando Flexbox/Grid y estilizar tarjetas.",
+        "Implementar JavaScript ES6 para: cargar tareas via GET, renderizarlas; crear tarea v\u00eda POST; actualizar v\u00eda PUT; eliminar v\u00eda DELETE.",
+        "A\u00f1adir formulario/button para crear nuevas tareas en 'Por Hacer'.",
+        "Habilitar edici\u00f3n inline de texto al hacer clic en una tarjeta.",
+        "Integrar drag\u2011and\u2011drop con la API DragEvent, actualizando estado y llamando a PUT al soltar.",
+        "Gestionar errores y mostrar mensajes de feedback."
       ]
     }
   ]
