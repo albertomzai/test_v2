@@ -1,31 +1,35 @@
 {
   "api_contract": {
     "ruta": "/api/tasks",
-    "metodo": "GET"
+    "metodo": [
+      "GET",
+      "POST"
+    ]
   },
   "plan": [
     {
       "etapa": "backend",
       "tareas": [
-        "Instalar Flask y dependencias b\u00e1sicas.",
-        "Crear la estructura de carpetas: app/, static/, templates/.",
-        "Implementar un modelo simple Task con id, contenido y estado.",
-        "Persistir las tareas en tasks.json; cargar al iniciar y guardar tras cada operaci\u00f3n.",
-        "Desarrollar los endpoints REST seg\u00fan requisitos (GET, POST, PUT, DELETE).",
-        "Configurar CORS para permitir llamadas desde el frontend.",
-        "A\u00f1adir pruebas unitarias b\u00e1sicas para asegurar la integridad de CRUD."
+        "Instalar Flask y crear la estructura b\u00e1sica de la aplicaci\u00f3n.",
+        "Crear un modelo Task con id, contenido y estado (Por Hacer / En Progreso / Hecho).",
+        "Implementar funciones para cargar y guardar tareas en 'tasks.json' usando JSON.",
+        "Definir los endpoints REST: GET /api/tasks, POST /api/tasks, PUT /api/tasks/<id>, DELETE /api/tasks/<id>.",
+        "Agregar manejo de errores (404, 400) y validaci\u00f3n de datos entrantes.",
+        "Configurar CORS para permitir peticiones desde el frontend.",
+        "Probar la API con curl o Postman antes del despliegue."
       ]
     },
     {
       "etapa": "frontend",
       "tareas": [
-        "Crear index.html con una estructura b\u00e1sica HTML5 y referencias a CSS/JS internos.",
-        "Dise\u00f1ar las tres columnas usando Flexbox/Grid y estilizar tarjetas.",
-        "Implementar JavaScript ES6 para: cargar tareas via GET, renderizarlas; crear tarea v\u00eda POST; actualizar v\u00eda PUT; eliminar v\u00eda DELETE.",
-        "A\u00f1adir formulario/button para crear nuevas tareas en 'Por Hacer'.",
-        "Habilitar edici\u00f3n inline de texto al hacer clic en una tarjeta.",
-        "Integrar drag\u2011and\u2011drop con la API DragEvent, actualizando estado y llamando a PUT al soltar.",
-        "Gestionar errores y mostrar mensajes de feedback."
+        "Crear un archivo \u00fanico 'index.html' con estructura HTML5 y CSS Grid/Flexbox para las tres columnas.",
+        "Dise\u00f1ar tarjetas de tareas con estilos claros y estados visuales diferentes por columna.",
+        "Implementar JavaScript ES6: fetch API para interactuar con los endpoints del backend.",
+        "Agregar funcionalidad para crear nuevas tareas mediante un formulario o bot\u00f3n en la columna 'Por Hacer'.",
+        "Permitir edici\u00f3n inline del contenido de una tarjeta al hacer doble clic y enviar actualizaci\u00f3n v\u00eda PUT.",
+        "Integrar drag\u2011and\u2011drop (HTML5 Drag and Drop API) para mover tarjetas entre columnas.",
+        "Actualizar el estado de la tarea tras un drop enviando un PUT con el nuevo estado.",
+        "Persistir cambios en el servidor y refrescar la vista sin recargar la p\u00e1gina."
       ]
     }
   ]
