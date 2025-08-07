@@ -1,173 +1,182 @@
 #!/usr/bin/env python3
 """
-Backend API for a Mini‑Trello Kanban board.
+Backend implementation for the Mini-Trello Kanban board.
 
-This module implements the full CRUD interface defined in the
-architectural plan.  All data is persisted to a single JSON file
-(`tasks.json`) located at the project root.
-
-The application uses Flask, Flask‑CORS and the standard library only.
+This module sets up a Flask application that exposes CRUD endpoints for
+managing tasks. Tasks are persisted in a JSON file (`tasks.json`).
+The API follows the contract defined by the architect and includes
+basic error handling and CORS support.
 """
+
+from __future__ import annotations
 
 import json
 import os
-from typing import List, Dict, Any
+from pathlib import Path
+from typing import Dict, List
 
-from flask import Flask, jsonify, request, abort
+from flask import Flask, jsonify, request, send_from_directory, abort
 from flask_cors import CORS
 
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-TASKS_FILE = os.path.join(BASE_DIR, "tasks.json")
-DEFAULT_STATUS = "Por Hacer"
+BASE_DIR = Path(__file__).resolve().parent
+TASKS_FILE = BASE_DIR / "tasks.json"
+STATIC_FOLDER = BASE_DIR / "static"
 
-app = Flask(__name__)
-CORS(app, resources={"/api/*": {"origins": "http://localhost:3000"}})  # adjust port if needed
+# Ensure the static folder exists (used for serving index.html)
+STATIC_FOLDER.mkdir(exist_ok=True)
 
 # ---------------------------------------------------------------------------
-# Utility functions for JSON persistence
+# Flask application setup
 # ---------------------------------------------------------------------------
-def _load_tasks() -> List[Dict[str, Any]]:
+app = Flask(__name__, static_folder=str(STATIC_FOLDER))
+CORS(app)  # Allow CORS from any origin (frontend runs locally)
+
+# ---------------------------------------------------------------------------
+# In‑memory task store and helper functions
+# ---------------------------------------------------------------------------
+_tasks: List[Dict[str, object]] = []
+_next_id: int = 1
+
+
+def load_tasks() -> None:
+    """Load tasks from the JSON file into memory.
+
+    If the file does not exist or is empty, start with an empty list.
+    The global ``_next_id`` is set to one more than the maximum existing id.
     """
-    Load the list of tasks from TASKS_FILE.
-    If the file does not exist, return an empty list.
+    global _tasks, _next_id
+    if TASKS_FILE.exists():
+        try:
+            with open(TASKS_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    _tasks = data
+        except (json.JSONDecodeError, OSError) as exc:
+            # Log the error; in a real app use logging module
+            print(f"Failed to load tasks: {exc}")
+    else:
+        _tasks = []
+    _next_id = max((task["id"] for task in _tasks), default=0) + 1
+
+
+def persist_tasks() -> None:
+    """Write the current list of tasks to ``tasks.json``.
+
+    The operation is atomic by writing to a temporary file first and then
+    replacing the original.
     """
+    tmp_file = TASKS_FILE.with_suffix(".tmp")
     try:
-        with open(TASKS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return []
-    except json.JSONDecodeError as exc:  # pragma: no cover - defensive
-        raise ValueError("tasks.json is corrupted") from exc
+        with open(tmp_file, "w", encoding="utf-8") as f:
+            json.dump(_tasks, f, ensure_ascii=False, indent=2)
+        tmp_file.replace(TASKS_FILE)
+    except OSError as exc:
+        print(f"Failed to persist tasks: {exc}")
 
-def _save_tasks(tasks: List[Dict[str, Any]]) -> None:
+# Load existing tasks on startup
+load_tasks()
+
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
+@app.route("/", methods=["GET"])
+def index():
+    """Serve the frontend application.
+
+    The index.html file should be placed inside the ``static`` folder.
     """
-    Persist the given list of tasks to TASKS_FILE.
-    The file is written atomically using a temporary write‑and‑rename
-    strategy for safety.
-    """
-    temp_path = f"{TASKS_FILE}.tmp"
-    with open(temp_path, "w", encoding="utf-8") as f:
-        json.dump(tasks, f, ensure_ascii=False, indent=2)
-    os.replace(temp_path, TASKS_FILE)
+    return send_from_directory(app.static_folder, "index.html")
 
-# ---------------------------------------------------------------------------
-# Helper for ID generation
-# ---------------------------------------------------------------------------
-def _next_id(tasks: List[Dict[str, Any]]) -> int:
-    """
-    Return an integer that is one greater than the maximum existing id.
-    If no tasks exist, return 1.
-    """
-    if not tasks:
-        return 1
-    return max(task["id"] for task in tasks) + 1
-
-# ---------------------------------------------------------------------------
-# Error handlers
-# ---------------------------------------------------------------------------
-@app.errorhandler(400)
-def bad_request(error):  # pragma: no cover - trivial wrapper
-    response = jsonify({"error": "Bad request", "message": error.description})
-    response.status_code = 400
-    return response
-
-@app.errorhandler(404)
-def not_found(error):  # pragma: no cover - trivial wrapper
-    response = jsonify({"error": "Not found", "message": error.description})
-    response.status_code = 404
-    return response
-
-@app.errorhandler(500)
-def internal_error(error):  # pragma: no cover - defensive
-    response = jsonify({"error": "Internal server error", "message": str(error)})
-    response.status_code = 500
-    return response
-
-# ---------------------------------------------------------------------------
-# API endpoints
-# ---------------------------------------------------------------------------
+# API endpoints -------------------------------------------------------------
 @app.route("/api/tasks", methods=["GET"])
 def get_tasks():
-    """Return the full list of tasks."""
-    tasks = _load_tasks()
-    return jsonify(tasks), 200
+    """Return all tasks as a JSON array."""
+    return jsonify({"tasks": _tasks})
 
 @app.route("/api/tasks", methods=["POST"])
 def create_task():
     """Create a new task.
 
-    Expected JSON body:
-        {
-            "content": "string",
-            "status": "optional string"
-        }
+    Expects JSON body with ``content`` and ``state`` keys. Returns the
+    created task with its assigned ``id``.
     """
-    data = request.get_json(force=True, silent=False) or {}
+    if not request.is_json:
+        abort(400, description="Request must be JSON")
+    data = request.get_json()
     content = data.get("content")
-    if not isinstance(content, str) or not content.strip():
-        abort(400, description="'content' must be a non‑empty string")
+    state = data.get("state")
+    if not isinstance(content, str) or not isinstance(state, str):
+        abort(400, description="'content' and 'state' must be strings")
 
-    status = data.get("status", DEFAULT_STATUS)
-    if status not in {"Por Hacer", "En Progreso", "Hecho"}:
-        abort(400, description="Invalid 'status' value")
-
-    tasks = _load_tasks()
-    new_task = {
-        "id": _next_id(tasks),
-        "content": content.strip(),
-        "status": status,
-    }
-    tasks.append(new_task)
-    _save_tasks(tasks)
-    return jsonify(new_task), 201
+    global _next_id
+    task = {"id": _next_id, "content": content, "state": state}
+    _tasks.append(task)
+    _next_id += 1
+    persist_tasks()
+    return jsonify({"task": task}), 201
 
 @app.route("/api/tasks/<int:task_id>", methods=["PUT"])
 def update_task(task_id):
-    """Update an existing task's content and/or status."""
-    data = request.get_json(force=True, silent=False) or {}
-    if not data:
-        abort(400, description="No data provided for update")
+    """Update an existing task.
 
-    tasks = _load_tasks()
-    task = next((t for t in tasks if t["id"] == task_id), None)
+    The JSON body may contain ``content`` and/or ``state``. Only the
+    provided fields are updated.
+    """
+    if not request.is_json:
+        abort(400, description="Request must be JSON")
+    data = request.get_json()
+    task = next((t for t in _tasks if t["id"] == task_id), None)
     if task is None:
-        abort(404, description=f"Task {task_id} not found")
+        abort(404, description=f"Task with id {task_id} not found")
 
     content = data.get("content")
-    status = data.get("status")
-
+    state = data.get("state")
     if content is not None:
-        if not isinstance(content, str) or not content.strip():
-            abort(400, description="'content' must be a non‑empty string")
-        task["content"] = content.strip()
+        if not isinstance(content, str):
+            abort(400, description="'content' must be a string")
+        task["content"] = content
+    if state is not None:
+        if not isinstance(state, str):
+            abort(400, description="'state' must be a string")
+        task["state"] = state
 
-    if status is not None:
-        if status not in {"Por Hacer", "En Progreso", "Hecho"}:
-            abort(400, description="Invalid 'status' value")
-        task["status"] = status
-
-    _save_tasks(tasks)
-    return jsonify(task), 200
+    persist_tasks()
+    return jsonify({"task": task})
 
 @app.route("/api/tasks/<int:task_id>", methods=["DELETE"])
 def delete_task(task_id):
-    """Delete a task by its ID."""
-    tasks = _load_tasks()
-    new_tasks = [t for t in tasks if t["id"] != task_id]
-    if len(new_tasks) == len(tasks):
-        abort(404, description=f"Task {task_id} not found")
+    """Delete the specified task.
 
-    _save_tasks(new_tasks)
-    return jsonify({"message": f"Task {task_id} deleted"}), 200
+    Returns HTTP 204 No Content on success.
+    """
+    global _tasks
+    initial_len = len(_tasks)
+    _tasks = [t for t in _tasks if t["id"] != task_id]
+    if len(_tasks) == initial_len:
+        abort(404, description=f"Task with id {task_id} not found")
+    persist_tasks()
+    return '', 204
 
 # ---------------------------------------------------------------------------
-# Main entry point for development server
+# Error handlers
+# ---------------------------------------------------------------------------
+@app.errorhandler(400)
+def bad_request(error):
+    return jsonify({"error": error.description}), 400
+
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({"error": error.description}), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({"error": "Internal server error"}), 500
+
+# ---------------------------------------------------------------------------
+# Test client entry point (optional for manual testing)
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    # Ensure tasks.json exists on first run
-    if not os.path.exists(TASKS_FILE):
-        _save_tasks([])
     app.run(host="0.0.0.0", port=5000, debug=True)

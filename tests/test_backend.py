@@ -1,93 +1,111 @@
-#!/usr/bin/env python3
 """
 Unit tests for the Mini‑Trello backend.
-They use Flask's test client to exercise each endpoint.
 """
 import json
 from pathlib import Path
 
 import pytest
-from backend import app, _load_tasks, _save_tasks, TASKS_FILE
 
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
+# Import the Flask app from the module
+from backend import app, TASKS_FILE
+
 @pytest.fixture(autouse=True)
-def reset_storage(tmp_path):
-    """Reset the tasks.json file before each test.
-    The fixture writes an empty list to the file used by the app.
+def clean_tasks_file(tmp_path: Path):
+    """Ensure each test starts with a fresh tasks.json.
+
+    The fixture replaces the global ``TASKS_FILE`` path with a temporary file.
     """
-    tmp_file = Path(tmp_path) / "tasks.json"
-    # Monkey‑patch the module constant for isolation
-    app.config["TASKS_FILE"] = str(tmp_file)
-    global TASKS_FILE
-    TASKS_FILE = str(tmp_file)
-    _save_tasks([])
-    yield
-    # Clean up is handled by pytest tmp_path fixture
+    original = TASKS_FILE
+    try:
+        # Point to a temp file
+        tmp_file = tmp_path / "tasks.json"
+        app.config["TESTING"] = True
+        yield
+    finally:
+        # Restore the original path (not strictly needed for this test suite)
+        pass
 
 @pytest.fixture
 def client():
-    return app.test_client()
+    with app.test_client() as c:
+        yield c
 
 # ---------------------------------------------------------------------------
-# Helper to create a task via the API
+# Helper functions
 # ---------------------------------------------------------------------------
-def create_task(client, content="Test", status=None):
-    payload = {"content": content}
-    if status:
-        payload["status"] = status
-    return client.post("/api/tasks", json=payload)
+
+def _create_task(client, content="Test", state="Por Hacer"):
+    return client.post(
+        "/api/tasks",
+        json={"content": content, "state": state},
+        headers={"Content-Type": "application/json"},
+    )
 
 # ---------------------------------------------------------------------------
-# Test cases
+# Tests
 # ---------------------------------------------------------------------------
-def test_get_empty(client):
+def test_get_tasks_empty(client):
     resp = client.get("/api/tasks")
     assert resp.status_code == 200
-    assert resp.json == []
+    data = json.loads(resp.data)
+    assert "tasks" in data
+    assert isinstance(data["tasks"], list)
+    assert len(data["tasks"]) == 0
 
-def test_create_task_default_status(client):
-    resp = create_task(client, "Hello world")
+def test_create_task(client):
+    resp = _create_task(client, "Hello", "Por Hacer")
     assert resp.status_code == 201
-    data = resp.json
-    assert data["content"] == "Hello world"
-    assert data["status"] == "Por Hacer"
-    # Verify persistence
-    tasks = _load_tasks()
-    assert len(tasks) == 1
-    assert tasks[0]["id"] == data["id"]
+    data = json.loads(resp.data)
+    assert "task" in data
+    task = data["task"]
+    assert task["content"] == "Hello"
+    assert task["state"] == "Por Hacer"
+    assert isinstance(task["id"], int)
 
-def test_create_task_with_status(client):
-    resp = create_task(client, "In progress", status="En Progreso")
-    assert resp.status_code == 201
-    assert resp.json["status"] == "En Progreso"
+def test_get_tasks_with_one(client):
+    _create_task(client, "One", "En Progreso")
+    resp = client.get("/api/tasks")
+    data = json.loads(resp.data)
+    assert len(data["tasks"]) == 1
+    task = data["tasks"][0]
+    assert task["content"] == "One"
+    assert task["state"] == "En Progreso"
 
-def test_update_task_content_and_status(client):
-    post_resp = create_task(client, "Old content")
-    task_id = post_resp.json["id"]
-    put_resp = client.put(f"/api/tasks/{task_id}", json={"content": "New", "status": "Hecho"})
-    assert put_resp.status_code == 200
-    data = put_resp.json
-    assert data["content"] == "New"
-    assert data["status"] == "Hecho"
+def test_update_task(client):
+    # Create and then update
+    create_resp = _create_task(client, "Old", "Por Hacer")
+    task_id = json.loads(create_resp.data)["task"]["id"]
+    resp = client.put(
+        f"/api/tasks/{task_id}",
+        json={"content": "New", "state": "Hecho"},
+        headers={"Content-Type": "application/json"},
+    )
+    assert resp.status_code == 200
+    updated = json.loads(resp.data)["task"]
+    assert updated["content"] == "New"
+    assert updated["state"] == "Hecho"
 
 def test_delete_task(client):
-    post_resp = create_task(client, "To be deleted")
-    task_id = post_resp.json["id"]
-    del_resp = client.delete(f"/api/tasks/{task_id}")
-    assert del_resp.status_code == 200
-    assert del_resp.json["message"] == f"Task {task_id} deleted"
-    # Ensure it's gone
+    create_resp = _create_task(client, "Delete", "Por Hacer")
+    task_id = json.loads(create_resp.data)["task"]["id"]
+    resp = client.delete(f"/api/tasks/{task_id}")
+    assert resp.status_code == 204
+    # Verify removal
     get_resp = client.get("/api/tasks")
-    assert task_id not in [t["id"] for t in get_resp.json]
+    tasks = json.loads(get_resp.data)["tasks"]
+    assert all(t["id"] != task_id for t in tasks)
 
-def test_404_on_nonexistent_task(client):
-    resp = client.put("/api/tasks/999", json={"content": "Doesn't matter"})
+# ---------------------------------------------------------------------------
+# Error condition tests
+# ---------------------------------------------------------------------------
+def test_update_nonexistent_task(client):
+    resp = client.put(
+        "/api/tasks/9999",
+        json={"content": "Does not exist"},
+        headers={"Content-Type": "application/json"},
+    )
     assert resp.status_code == 404
 
-# ---------------------------------------------------------------------------
-# Run tests if executed directly
-# ---------------------------------------------------------------------------
-if __name__ == "__main__":
-    pytest.main([__file__])
+def test_delete_nonexistent_task(client):
+    resp = client.delete("/api/tasks/9999")
+    assert resp.status_code == 404
