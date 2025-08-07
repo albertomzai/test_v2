@@ -4,111 +4,127 @@
     <meta charset="UTF-8" />
     <title>Simulador de Hipotecas</title>
     <style>
-        body {font-family: Arial, sans-serif; margin: 2rem;}
-        form {max-width: 400px; margin-bottom: 1.5rem;}
-        label {display: block; margin-top: 0.75rem;}
-        input[type="number"] {width: 100%; padding: 0.4rem; margin-top: 0.25rem;}
-        button {margin-top: 1rem; padding: 0.6rem 1.2rem; cursor: pointer;}
-        table {border-collapse: collapse; width: 100%; margin-top: 1.5rem;}
-        th, td {border: 1px solid #ddd; padding: 0.5rem; text-align: right;}
-        th {background-color: #f2f2f2;}
-        .error {color: red; margin-top: 0.5rem;}
+        body { font-family: Arial, sans-serif; margin: 2rem; }
+        form { margin-bottom: 1.5rem; }
+        label { display: block; margin-top: 0.5rem; }
+        input[type="number"] { width: 100%; padding: 0.4rem; margin-top: 0.2rem; }
+        button { margin-top: 1rem; padding: 0.6rem 1.2rem; }
+        #mensaje_error { color: red; margin-top: 0.5rem; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { border: 1px solid #ccc; padding: 0.4rem; text-align: right; }
+        th { background-color: #f2f2f2; }
     </style>
 </head>
 <body>
     <h1>Simulador de Hipotecas</h1>
-    <form id="hipoteca-form">
-        <label for="monto">Importe del préstamo (€):
-            <input type="number" id="monto" name="monto" min="0" step="0.01" required />
+
+    <form id="hipoteca_form">
+        <label for="monto_input">Monto del préstamo (€):
+            <input type="number" id="monto_input" name="monto" min="0" step="any" required />
         </label>
-        <label for="tasa_interes">Tasa de interés anual (%):
-            <input type="number" id="tasa_interes" name="tasa_interes" min="0" step="0.01" required />
+        <label for="tasa_input">Tasa de interés (% anual):
+            <input type="number" id="tasa_input" name="tasa" min="0" step="any" required />
         </label>
-        <label for="plazo_años">Plazo en años:
-            <input type="number" id="plazo_años" name="plazo_años" min="1" step="1" required />
+        <label for="plazo_input">Plazo (meses):
+            <input type="number" id="plazo_input" name="plazo" min="1" step="1" required />
         </label>
         <button type="submit">Calcular</button>
     </form>
-    <div class="error" id="error-msg"></div>
-    <table id="tabla-amortizacion" hidden>
+
+    <div id="mensaje_error"></div>
+
+    <table id="tabla_amortizacion">
         <thead>
             <tr>
-                <th>Pago #</th>
-                <th>Principal (€)</th>
+                <th>Cuota #</th>
+                <th>Monto de Cuota (€)</th>
                 <th>Interés (€)</th>
+                <th>Principal (€)</n>
                 <th>Saldo Restante (€)</th>
             </tr>
         </thead>
         <tbody></tbody>
     </table>
 
-    <script type="module">
-        const form = document.getElementById('hipoteca-form');
-        const errorMsg = document.getElementById('error-msg');
-        const tabla = document.getElementById('tabla-amortizacion');
-        const tbody = tabla.querySelector('tbody');
-
+    <script type="text/javascript">
         /**
-         * Convierte los valores del formulario a un objeto JSON.
-         * @returns {{monto: number, tasa_interes: number, plazo: number}}
+         * Captura el envío del formulario, evita la recarga y envía los datos al backend.
          */
-        function obtener_datos_formulario() {
-            const monto = parseFloat(document.getElementById('monto').value);
-            const tasa_interes = parseFloat(document.getElementById('tasa_interes').value) / 100;
-            const plazo = parseInt(document.getElementById('plazo_años').value, 10);
-            return { monto, tasa_interes, plazo };
-        }
+        document.getElementById('hipoteca_form').addEventListener('submit', function (event) {
+            event.preventDefault(); // Evita la recarga de página
+            const monto = parseFloat(document.getElementById('monto_input').value);
+            const tasa = parseFloat(document.getElementById('tasa_input').value);
+            const plazo = parseInt(document.getElementById('plazo_input').value, 10);
 
-        /**
-         * Renderiza la tabla de amortización en el DOM.
-         * @param {{principal: number, interes: number, saldo_restante: number}[]} pagos
-         */
-        function render_tabla_amortizacion(pagos) {
-            tbody.innerHTML = '';
-            pagos.forEach((pago, index) => {
-                const fila = document.createElement('tr');
-                fila.innerHTML = `<td>${index + 1}</td>
-                                  <td>${pago.principal.toFixed(2)}</td>
-                                  <td>${pago.interes.toFixed(2)}</td>
-                                  <td>${pago.saldo_restante.toFixed(2)}</td>`;
-                tbody.appendChild(fila);
-            });
-            tabla.hidden = false;
-        }
-
-        /**
-         * Maneja la respuesta del servidor y muestra errores o datos.
-         * @param {Response} response
-         */
-        async function procesar_respuesta(response) {
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText || 'Error al procesar la solicitud');
+            // Validaciones básicas
+            if (isNaN(monto) || monto <= 0) {
+                mostrar_error('El monto debe ser un número positivo.');
+                return;
             }
-            const data = await response.json();
-            render_tabla_amortizacion(data.pagos);
-        }
+            if (isNaN(tasa) || tasa < 0) {
+                mostrar_error('La tasa debe ser un número no negativo.');
+                return;
+            }
+            if (isNaN(plazo) || plazo <= 0) {
+                mostrar_error('El plazo debe ser al menos 1 mes.');
+                return;
+            }
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            errorMsg.textContent = '';
-            tabla.hidden = true;
-            try {
-                const datos = obtener_datos_formulario();
-                if (!datos.monto || !datos.tasa_interes || !datos.plazo) {
-                    throw new Error('Todos los campos son obligatorios');
+            // Construir cuerpo de la petición
+            const datos = { monto: monto, tasa: tasa, plazo: plazo };
+
+            fetch('/api/hipoteca', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(datos)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor.');
                 }
+                return response.json();
+            })
+            .then(respuesta => {
+                // Limpiar mensajes y tabla
+                document.getElementById('mensaje_error').textContent = '';
+                const tbody = document.querySelector('#tabla_amortizacion tbody');
+                tbody.innerHTML = '';
 
-                const response = await fetch('/api/hipoteca', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(datos)
+                respuesta.forEach(fila => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${fila.cuota}</td>
+                        <td>${formatCurrency(fila.monto_cuota)}</td>
+                        <td>${formatCurrency(fila.interes)}</td>
+                        <td>${formatCurrency(fila.principal)}</td>
+                        <td>${formatCurrency(fila.saldo_restante)}</td>
+                    `;
+                    tbody.appendChild(tr);
                 });
-                await procesar_respuesta(response);
-            } catch (err) {
-                errorMsg.textContent = err.message;
-            }
+            })
+            .catch(error => {
+                mostrar_error(error.message || 'Error inesperado.');
+            });
         });
+
+        /**
+         * Muestra un mensaje de error al usuario.
+         * @param {string} msg - Mensaje a mostrar.
+         */
+        function mostrar_error(msg) {
+            document.getElementById('mensaje_error').textContent = msg;
+        }
+
+        /**
+         * Formatea número como moneda en euros.
+         * @param {number} valor
+         * @returns {string}
+         */
+        function formatCurrency(valor) {
+            return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(valor);
+        }
     </script>
 </body>
 </html>
