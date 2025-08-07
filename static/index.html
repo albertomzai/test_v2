@@ -1,121 +1,117 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <title>Lista de Tareas</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 2rem; }
-        #task-form { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-        #tasks-list { list-style: none; padding: 0; }
-        .task-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem;
-                      border: 1px solid #ccc; margin-bottom: 0.25rem; }
-        button { cursor: pointer; background-color: #e74c3c; color: white; border: none; padding: 0.2rem 0.4rem; }
-    </style>
+<meta charset="UTF-8"/>
+<title>Mini Trello</title>
+<style>
+  body{font-family:Arial,sans-serif;margin:0;padding:0;background:#f4f5f7;}
+  .board{display:flex;height:100vh;padding:20px;gap:10px;box-sizing:border-box;}
+  .column{background:#e2e4e6;border-radius:3px;flex:1;display:flex;flex-direction:column;overflow-y:auto;}
+  .column h2{text-align:center;background:#dfe1e5;padding:10px;margin:0;font-size:1rem;color:#172b4d;border-bottom:1px solid #cfd8dc;}
+  .task{background:white;border-radius:3px;margin:5px 10px;padding:10px;cursor:pointer;box-shadow:0 1px 0 rgba(9,30,66,.25);user-select:none;}
+  .task[draggable="true"]{opacity:0.8;}
+  .add-task{background:#5aac44;color:white;border:none;padding:10px;margin:5px auto;cursor:pointer;width:90%;border-radius:3px;font-size:1rem;}
+  .add-task:hover{background:#519839;}
+</style>
 </head>
 <body>
-    <h1>Lista de Tareas</h1>
-    <form id="task-form">
-        <input type="text" id="new-task" placeholder="Nueva tarea" required />
-        <button type="submit">Añadir</button>
-    </form>
-    <ul id="tasks-list"></ul>
+<div class="board">
+  <div class="column" data-state="Por Hacer">
+    <h2>Por Hacer</h2>
+    <button id="new-task-btn" class="add-task">+ Nueva tarea</button>
+    <div id="por-hacer"></div>
+  </div>
+  <div class="column" data-state="En Progreso">
+    <h2>En Progreso</h2>
+    <div id="en-progreso"></div>
+  </div>
+  <div class="column" data-state="Hecho">
+    <h2>Hecho</h2>
+    <div id="hecho"></div>
+  </div>
+</div>
+<script type="module">
+const API_URL = '/api/tasks';
 
-    <script>
-        // Constantes de almacenamiento local y API
-        const LOCAL_STORAGE_KEY = 'todo_tasks';
-        const API_ENDPOINT = '/api/tareas';
+// Fetch tasks from backend and render them
+async function cargarTareas(){
+  try{
+    const res = await fetch(API_URL);
+    if(!res.ok) throw new Error('Error al obtener tareas');
+    const tareas = await res.json();
+    // Clear columns
+    document.querySelectorAll('.column > div[id]').forEach(col=>col.innerHTML='');
+    tareas.forEach(mostrarTarea);
+  }catch(err){
+    console.error(err);
+  }
+}
 
-        /**
-         * Carga las tareas desde el localStorage.
-         * @returns {Array<string>} Lista de tareas.
-         */
-        function cargar_tareas() {
-            const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-            return stored ? JSON.parse(stored) : [];
-        }
+// Create a task element and append to correct column
+function mostrarTarea(task){
+  const colDiv = document.getElementById(sanitizeState(task.state));
+  if(!colDiv) return;
+  const card = document.createElement('div');
+  card.className='task';
+  card.draggable=true;
+  card.dataset.id=task.id;
+  card.textContent=task.content;
 
-        /**
-         * Guarda las tareas en el localStorage.
-         * @param {Array<string>} tasks Lista de tareas a guardar.
-         */
-        function guardar_tareas(tasks) {
-            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(tasks));
-        }
+  // Drag events
+  card.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',task.id);});
+  card.addEventListener('dblclick',()=>editarTarea(card));
 
-        /**
-         * Renderiza la lista completa en el DOM.
-         * @param {Array<string>} tasks Lista de tareas.
-         */
-        function renderizar_tareas(tasks) {
-            const list = document.getElementById('tasks-list');
-            list.innerHTML = '';
-            tasks.forEach((task, index) => {
-                const li = document.createElement('li');
-                li.className = 'task-item';
-                li.textContent = task;
+  colDiv.appendChild(card);
+}
 
-                const btn = document.createElement('button');
-                btn.textContent = 'Eliminar';
-                btn.onclick = () => eliminar_tarea(index);
+// Sanitize state string to match element id
+function sanitizeState(state){return state.toLowerCase().replace(/\s+/g,'-');}
 
-                li.appendChild(btn);
-                list.appendChild(li);
-            });
-        }
+// Add new task
+document.getElementById('new-task-btn').addEventListener('click',async()=>{
+  const content = prompt('Contenido de la tarea:');
+  if(!content) return;
+  try{
+    const res = await fetch(API_URL,{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content,state:'Por Hacer'})
+    });
+    if(!res.ok) throw new Error('Error al crear tarea');
+    const task = await res.json();
+    mostrarTarea(task);
+  }catch(err){console.error(err);}
+});
 
-        /**
-         * Envía una petición al backend para añadir o eliminar una tarea.
-         * @param {string} action 'add' o 'remove'
-         * @param {Object} data Datos de la tarea.
-         */
-        function enviar_api(action, data) {
-            fetch(API_ENDPOINT, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action, ...data })
-            }).catch(err => console.error('Error al comunicar con la API:', err));
-        }
+// Inline edit
+async function editarTarea(card){
+  const newContent = prompt('Editar contenido:',card.textContent);
+  if(newContent===null||newContent===card.textContent) return;
+  const id=card.dataset.id;
+  try{
+    const res = await fetch(`${API_URL}/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:newContent})});
+    if(!res.ok) throw new Error('Error al actualizar tarea');
+    card.textContent=newContent;
+  }catch(err){console.error(err);}
+}
 
-        /**
-         * Añade una nueva tarea.
-         * @param {string} task Texto de la tarea.
-         */
-        function agregar_tarea(task) {
-            const tasks = cargar_tareas();
-            tasks.push(task);
-            guardar_tareas(tasks);
-            renderizar_tareas(tasks);
-            enviar_api('add', { task });
-        }
+// Drag & Drop handling for columns
+document.querySelectorAll('.column').forEach(col=>{
+  col.addEventListener('dragover',e=>{e.preventDefault();});
+  col.addEventListener('drop',async e=>{
+    e.preventDefault();
+    const id = e.dataTransfer.getData('text/plain');
+    const card = document.querySelector(`.task[data-id="${id}"]`);
+    if(!card) return;
+    const newState = col.dataset.state;
+    try{
+      const res = await fetch(`${API_URL}/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({state:newState})});
+      if(!res.ok) throw new Error('Error al mover tarea');
+      col.querySelector('#'+sanitizeState(newState)).appendChild(card);
+    }catch(err){console.error(err);}
+  });
+});
 
-        /**
-         * Elimina una tarea por índice.
-         * @param {number} index Índice de la tarea a eliminar.
-         */
-        function eliminar_tarea(index) {
-            const tasks = cargar_tareas();
-            const removed = tasks.splice(index, 1)[0];
-            guardar_tareas(tasks);
-            renderizar_tareas(tasks);
-            enviar_api('remove', { task: removed });
-        }
-
-        // Inicialización
-        document.addEventListener('DOMContentLoaded', () => {
-            const initialTasks = cargar_tareas();
-            renderizar_tareas(initialTasks);
-
-            const form = document.getElementById('task-form');
-            form.addEventListener('submit', e => {
-                e.preventDefault();
-                const input = document.getElementById('new-task');
-                const taskText = input.value.trim();
-                if (taskText) {
-                    agregar_tarea(taskText);
-                    input.value = '';
-                }
-            });
-        });
-    </script>
+// Initial load
+cargarTareas();
+</script>
 </body>
 </html>
