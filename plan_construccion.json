@@ -1,1 +1,51 @@
-{'api_contract': {'ruta': '/api/tasks', 'metodos_disponibles': ['GET', 'POST'], 'descripcion': 'Endpoint para listar y crear tareas.', 'parametros_entrada_post': {'contenido': 'string', 'estado': 'string'}, 'respuesta_get': [{'id': 'int', 'contenido': 'string', 'estado': 'string'}], 'respuesta_post': {'id': 'int', 'contenido': 'string', 'estado': 'string'}}, 'plan': [{'etapa': 'backend', 'tareas': ['Inicializar un proyecto Flask con la estructura de carpetas adecuada.', "Crear un módulo para cargar y guardar tareas en 'tasks.json' usando JSON estándar.", 'Definir el modelo de tarea con atributos id, contenido y estado.', "Implementar el endpoint GET '/api/tasks' que devuelve todas las tareas almacenadas.", "Implementar el endpoint POST '/api/tasks' que recibe contenido y estado, asigna un ID único, guarda la tarea y devuelve la representación JSON.", "Implementar el endpoint PUT '/api/tasks/<id>' que actualiza el contenido o estado de una tarea existente y persiste el cambio en 'tasks.json'.", "Implementar el endpoint DELETE '/api/tasks/<id>' que elimina la tarea correspondiente del archivo JSON.", 'Añadir validación de datos entrantes y manejo de excepciones para evitar errores 400/404.', 'Configurar CORS para permitir peticiones desde cualquier origen durante desarrollo.', 'Incluir pruebas unitarias básicas para cada endpoint utilizando unittest o pytest.']}, {'etapa': 'frontend', 'tareas': ["Crear el archivo 'index.html' con una estructura básica de encabezado, cuerpo y estilo inline.", "Diseñar tres columnas verticales etiquetadas 'Por Hacer', 'En Progreso' y 'Hecho' usando Flexbox o Grid en CSS.", "Añadir un botón o formulario para crear nuevas tarjetas que envíe una solicitud POST al backend con el contenido ingresado y estado inicial 'Por Hacer'.", "Implementar la lógica JavaScript para cargar todas las tareas desde GET '/api/tasks' y renderizarlas como tarjetas dentro de sus columnas correspondientes.", 'Agregar funcionalidad de edición inline: al hacer clic en una tarjeta, reemplazar su texto por un campo editable que guarde cambios con PUT cuando se confirme.', "Implementar drag-and-drop utilizando la API Drag and Drop nativa para mover tarjetas entre columnas y actualizar el estado vía PUT a '/api/tasks/<id>'.", 'Actualizar dinámicamente la vista tras cada operación (creación, edición, movimiento o eliminación) sin recargar la página.', 'Incluir manejo básico de errores en el frontend mostrando mensajes al usuario cuando las peticiones API fallen.']}]}
+{
+  "api_contract": {
+    "ruta": "/api/tasks",
+    "metodo": "GET, POST, PUT, DELETE",
+    "descripcion": "Gestión CRUD de tareas Kanban.",
+    "parametros_entrada_POST": {
+      "content": "string",
+      "status": "string"
+    },
+    "parametros_entrada_PUT": {
+      "content?": "string",
+      "status?": "string"
+    },
+    "respuesta_GET": "[{id: int, content: string, status: string}]",
+    "respuesta_POST": "{id: int, content: string, status: string}",
+    "respuesta_PUT": "{id: int, content: string, status: string}"
+  },
+  "plan": [
+    {
+      "etapa": "backend",
+      "tareas": [
+        "Inicializar un proyecto Flask con la estructura de carpetas /app y /static.",
+        "Crear el archivo 'tasks.json' en la raíz del proyecto para persistencia.",
+        "Implementar una función utilitaria que cargue y guarde datos JSON desde/para 'tasks.json'.",
+        "Definir el endpoint GET '/api/tasks' que devuelve todas las tareas leídas de 'tasks.json'.",
+        "Definir el endpoint POST '/api/tasks' que recibe JSON con 'content' y opcionalmente 'status', asigna un id único, guarda la tarea y responde con el objeto creado.",
+        "Definir el endpoint PUT '/api/tasks/<int:id>' que actualiza 'content' o 'status' de la tarea identificada y devuelve el objeto actualizado.",
+        "Definir el endpoint DELETE '/api/tasks/<int:id>' que elimina la tarea correspondiente y confirma con un mensaje JSON.",
+        "Añadir manejo de excepciones para errores 404, 400 y 500 con respuestas JSON claras.",
+        "Configurar CORS en Flask para permitir peticiones desde localhost del frontend.",
+        "Escribir pruebas unitarias básicas para cada endpoint usando unittest o pytest."
+      ]
+    },
+    {
+      "etapa": "frontend",
+      "tareas": [
+        "Crear un único archivo 'index.html' con estructura básica: <html>, <head> y <body>.",
+        "Incluir en el head los estilos CSS necesarios para tres columnas flexibles con títulos 'Por Hacer', 'En Progreso', 'Hecho'.",
+        "Agregar un contenedor principal que contenga las tres columnas, cada una con un id único (por_hacer, en_progreso, hecho).",
+        "Añadir un botón de ‘+ Añadir Tarea’ dentro de la columna 'Por Hacer' que abre un prompt para el texto.",
+        "Implementar JavaScript inline que al pulsar el botón envíe una petición POST a '/api/tasks' y añada la tarjeta resultante en la columna correspondiente.",
+        "Crear funciones JS para renderizar tarjetas desde los datos recibidos del backend, con atributos data-id y content editable.",
+        "Añadir listeners de 'click' sobre cada tarjeta que permita editar su texto inline y envíe una petición PUT al backend cuando se pierda el foco.",
+        "Implementar drag‑and‑drop usando la API DragEvent: establecer draggable en las tarjetas, manejar eventos 'dragstart', 'dragover', 'drop' en las columnas.",
+        "Al soltar una tarjeta en otra columna, actualizar su estado localmente y enviar una petición PUT a '/api/tasks/<id>' con el nuevo status.",
+        "Incluir manejo de errores básicos: alertas cuando la API devuelve un error o la red falla.",
+        "Añadir lógica para cargar todas las tareas al iniciar la página mediante GET '/api/tasks' y renderizarlas en sus columnas respectivas."
+      ]
+    }
+  ]
+}
