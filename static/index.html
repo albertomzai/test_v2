@@ -1,22 +1,265 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <title>Mini Trello</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-        .board { display: flex; gap: 1rem; padding: 1rem; }
-        .column { background:#f4f5f7; border-radius: 3px; width: 30%; padding: 0.5rem; }
-        .card { background:white; margin-bottom:0.5rem; padding:0.5rem; border-radius:3px; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,.15); }
-    </style>
+<meta charset="UTF-8" />
+<title>Mini-Trello Kanban</title>
+<style>
+/* Paleta básica */
+:root {
+  --bg: #f4f6f8;
+  --col1: #e0f7fa;
+  --col2: #fff9c4;
+  --col3: #ffe0b2;
+  --card-bg: #ffffff;
+  --border: #dddddd;
+}
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: var(--bg);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+header {
+  padding: 1rem;
+  text-align: center;
+  background-color: #00695c;
+  color: white;
+}
+#board {
+  flex: 1;
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  padding: 1rem;
+  gap: 1rem;
+  overflow-x: auto;
+}
+.column {
+  background-color: var(--border);
+  border-radius: 8px;
+  width: 30%;
+  min-width: 250px;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 150px);
+}
+.column h2 {
+  background-color: var(--border);
+  margin: 0;
+  padding: 0.5rem;
+  text-align: center;
+  font-size: 1.1rem;
+}
+.task-list {
+  flex: 1;
+  padding: 0.5rem;
+  overflow-y: auto;
+}
+.card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  cursor: grab;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.card.dragging {
+  opacity: 0.6;
+}
+.card input[type="text"] {
+  width: 80%;
+}
+#new-task-form {
+  margin: 1rem auto;
+  max-width: 600px;
+  display: flex;
+  gap: 0.5rem;
+}
+#alert {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background-color: #ffcccb;
+  color: #a94442;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  display: none;
+}
+@media (max-width: 768px) {
+  #board { flex-direction: column; align-items: stretch; }
+  .column { width: 100%; margin-bottom: 1rem; }
+}
+</style>
 </head>
 <body>
-    <h1>Mini Trello</h1>
-    <div class="board">
-        <div class="column" id="todo"><h3>Por Hacer</h3></div>
-        <div class="column" id="doing"><h3>En Progreso</h3></div>
-        <div class="column" id="done"><h3>Hecho</h3></div>
-    </div>
-    <script src="/static/main.js"></script>
+<header><h1>Mini-Trello Kanban</h1></header>
+<div id="alert"></div>
+<form id="new-task-form">
+  <input type="text" id="new-task-input" placeholder="Nueva tarea…" required />
+  <button type="submit">Añadir</button>
+</form>
+<div id="board">
+  <section class="column" data-status="Por Hacer">
+    <h2>Por Hacer</h2>
+    <div class="task-list" id="col-por-hacer"></div>
+  </section>
+  <section class="column" data-status="En Progreso">
+    <h2>En Progreso</h2>
+    <div class="task-list" id="col-en-progreso"></div>
+  </section>
+  <section class="column" data-status="Hecho">
+    <h2>Hecho</h2>
+    <div class="task-list" id="col-hecho"></div>
+  </section>
+</div>
+<script>
+const API_URL = '/api/tasks';
+const ALERT_TIMEOUT = 3000;
+
+function showAlert(msg) {
+  const alertDiv = document.getElementById('alert');
+  alertDiv.textContent = msg;
+  alertDiv.style.display = 'block';
+  setTimeout(() => { alertDiv.style.display = 'none'; }, ALERT_TIMEOUT);
+}
+
+async function fetchTasks() {
+  try {
+    const resp = await fetch(API_URL, { method: 'GET' });
+    if (!resp.ok) throw new Error('Error al cargar tareas');
+    return await resp.json();
+  } catch (err) {
+    showAlert(err.message);
+    return [];
+  }
+}
+
+function clearBoard() {
+  document.querySelectorAll('.task-list').forEach(el => el.innerHTML = '');
+}
+
+function createCard(task) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.setAttribute('draggable', true);
+  card.dataset.id = task.id;
+
+  const textSpan = document.createElement('span');
+  textSpan.textContent = task.content;
+  textSpan.style.flexGrow = '1';
+  card.appendChild(textSpan);
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.textContent = '✖';
+  deleteBtn.title = 'Eliminar';
+  deleteBtn.style.border = 'none';
+  deleteBtn.style.background = 'transparent';
+  deleteBtn.style.cursor = 'pointer';
+  card.appendChild(deleteBtn);
+
+  // Drag events
+  card.addEventListener('dragstart', e => {
+    e.dataTransfer.setData('text/plain', task.id);
+    card.classList.add('dragging');
+  });
+  card.addEventListener('dragend', () => card.classList.remove('dragging'));
+
+  // Delete event
+  deleteBtn.addEventListener('click', async e => {
+    e.stopPropagation();
+    try {
+      const resp = await fetch(`${API_URL}/${task.id}`, { method: 'DELETE' });
+      if (!resp.ok) throw new Error('No se pudo eliminar');
+      card.remove();
+    } catch (err) {
+      showAlert(err.message);
+    }
+  });
+
+  // Inline edit
+  textSpan.addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = task.content;
+    card.replaceChild(input, textSpan);
+    input.focus();
+    function submitEdit() {
+      const newContent = input.value.trim();
+      if (!newContent) { showAlert('Contenido vacío'); return; }
+      updateTask(task.id, { content: newContent });
+      input.replaceWith(textSpan); textSpan.textContent = newContent;
+    }
+    input.addEventListener('blur', submitEdit);
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { submitEdit(); }
+      else if (e.key === 'Escape') { input.replaceWith(textSpan); }
+    });
+  });
+
+  return card;
+}
+
+async function updateTask(id, data) {
+  try {
+    const resp = await fetch(`${API_URL}/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!resp.ok) throw new Error('Error al actualizar');
+  } catch (err) {
+    showAlert(err.message);
+  }
+}
+
+async function renderTasks() {
+  const tasks = await fetchTasks();
+  clearBoard();
+  tasks.forEach(task => {
+    const colId = `col-${task.estado.toLowerCase().replace(/\s+/g, '-')}`;
+    const column = document.getElementById(colId);
+    if (column) column.appendChild(createCard(task));
+  });
+}
+
+// Column drop handling
+document.querySelectorAll('.column').forEach(col => {
+  col.addEventListener('dragover', e => e.preventDefault());
+  col.addEventListener('drop', async e => {
+    const id = e.dataTransfer.getData('text/plain');
+    const newStatus = col.dataset.status;
+    await updateTask(id, { estado: newStatus });
+    renderTasks();
+  });
+});
+
+// New task form
+document.getElementById('new-task-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const input = document.getElementById('new-task-input');
+  const content = input.value.trim();
+  if (!content) { showAlert('Introduce una tarea'); return; }
+  try {
+    const resp = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content })
+    });
+    if (!resp.ok) throw new Error('Error al crear');
+    input.value = '';
+    renderTasks();
+  } catch (err) {
+    showAlert(err.message);
+  }
+});
+
+// Inicializar
+renderTasks();
+</script>
 </body>
 </html>
