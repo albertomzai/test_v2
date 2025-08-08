@@ -1,66 +1,48 @@
 {
   "api_contract": {
     "ruta": "/api/tasks",
-    "metodo_get": "GET",
-    "descripcion_get": "Devuelve todas las tareas existentes.",
-    "metodo_post": "POST",
-    "descripcion_post": "Crea una nueva tarea con contenido y estado inicial 'Por Hacer'.",
-    "parametros_post": {
-      "content": "string",
-      "status": "string (default: Por Hacer)"
+    "metodo": "GET/POST",
+    "descripcion": "Obtener todas las tareas o crear una nueva.",
+    "parametros_entrada_POST": {
+      "contenido": "string",
+      "estado": "string"
     },
-    "respuesta_post": {
-      "id": "integer",
-      "content": "string",
-      "status": "string"
+    "respuesta_GET": {
+      "tareas": "[{id, contenido, estado}]"
     },
-    "metodo_put": "PUT",
-    "descripcion_put": "Actualiza el contenido o estado de una tarea existente.",
-    "parametros_put": {
-      "content": "string (opcional)",
-      "status": "string (opcional)"
-    },
-    "respuesta_put": {
-      "id": "integer",
-      "content": "string",
-      "status": "string"
-    },
-    "metodo_delete": "DELETE",
-    "descripcion_delete": "Elimina una tarea.",
-    "parametros_delete": {},
-    "respuesta_delete": {
-      "message": "string"
+    "respuesta_POST": {
+      "id": "int",
+      "contenido": "string",
+      "estado": "string"
     }
   },
   "plan": [
     {
       "etapa": "backend",
       "tareas": [
-        "Crear un proyecto Flask con la estructura de directorios base: app, static, templates.",
-        "Definir una clase Task que represente cada tarea con id, content y status.",
-        "Implementar funciones auxiliares para leer y escribir el archivo 'tasks.json' en disco.",
-        "Exponer el endpoint GET '/api/tasks' que devuelve la lista de tareas serializada a JSON.",
-        "Crear el endpoint POST '/api/tasks' que valida los campos recibidos, asigna un id único, guarda la tarea y responde con su representación JSON.",
-        "Implementar el endpoint PUT '/api/tasks/<int:id>' que actualiza contenido o estado según se reciba, persiste el cambio y devuelve la tarea actualizada.",
-        "Añadir el endpoint DELETE '/api/tasks/<int:id>' que elimina la tarea del archivo y confirma con un mensaje de éxito.",
-        "Configurar CORS para permitir peticiones desde el mismo dominio donde se servirá 'index.html'.",
-        "Agregar manejo de excepciones globales para errores 404, 400 y 500, retornando respuestas JSON estructuradas.",
-        "Escribir pruebas unitarias que verifiquen cada endpoint con datos válidos e inválidos."
+        "Inicializar un proyecto Flask con estructura de directorios: app/, static/ y templates/.",
+        "Crear un módulo `tasks.py` que maneje la carga, guardado y generación de ID para tareas almacenadas en 'tasks.json'.",
+        "Implementar el endpoint GET '/api/tasks' que devuelve todas las tareas como JSON.",
+        "Implementar el endpoint POST '/api/tasks' que valida los campos 'contenido' y 'estado', asigna un ID único, guarda la tarea y retorna el objeto creado.",
+        "Implementar el endpoint PUT '/api/tasks/<int:id>' que actualiza el contenido o estado de una tarea existente, persiste el cambio en 'tasks.json' y devuelve la tarea actualizada.",
+        "Implementar el endpoint DELETE '/api/tasks/<int:id>' que elimina la tarea correspondiente, actualiza 'tasks.json' y confirma con un mensaje JSON.",
+        "Configurar CORS para permitir solicitudes desde el mismo dominio del archivo index.html.",
+        "Agregar manejo de excepciones: 404 cuando una tarea no exista, 400 por datos inválidos, y retorno de códigos HTTP adecuados.",
+        "Incluir pruebas unitarias básicas que verifiquen la creación, lectura, actualización y eliminación de tareas en memoria antes de escribir a disco."
       ]
     },
     {
       "etapa": "frontend",
       "tareas": [
-        "Crear el archivo 'index.html' con la estructura básica: título, contenedor principal y tres columnas etiquetadas Por Hacer, En Progreso y Hecho.",
-        "Definir estilos CSS inline o en un bloque <style> que utilicen Flexbox para distribuir las columnas verticalmente y dar apariencia de tarjetas.",
-        "Agregar un formulario simple (input + botón) dentro de la columna 'Por Hacer' para crear nuevas tareas.",
-        "Implementar una función JavaScript que capture el evento submit, envíe una petición POST a '/api/tasks', y al recibir la respuesta inserte una tarjeta en la columna correspondiente.",
-        "Crear lógica para que al hacer clic sobre el contenido de una tarjeta se convierta en un campo editable (input), con guardado automático mediante PUT cuando el usuario finalice la edición.",
-        "Añadir soporte drag‑and‑drop utilizando la API DragDrop: permitir arrastrar tarjetas entre columnas y, al soltarlas, enviar una petición PUT para actualizar su estado en el backend.",
-        "Desarrollar funciones de renderizado que generen dinámicamente las tarjetas desde los datos obtenidos con GET '/api/tasks' al cargar la página.",
-        "Incluir manejo básico de errores: mostrar mensajes temporales cuando las peticiones a la API fallen.",
-        "Optimizar el código para evitar recargas completas: usar eventos y manipulaciones del DOM sin refrescar la página.",
-        "Añadir comentarios claros en el JavaScript explicando cada bloque funcional."
+        "Crear el archivo 'index.html' con una estructura básica: <head> con estilos CSS y <body> con un contenedor principal.",
+        "Definir tres columnas dentro del contenedor usando Flexbox o Grid, etiquetadas como 'Por Hacer', 'En Progreso' y 'Hecho'.",
+        "Agregar un botón '+ Añadir Tarea' que abre un modal o input inline para introducir el contenido de la nueva tarjeta; al confirmar, enviar una solicitud POST a '/api/tasks' y renderizar la tarjeta en la columna 'Por Hacer'.",
+        "Implementar cada tarjeta como un <div> con atributo data-id y contenteditable para permitir edición del texto; al perder foco (blur), enviar una solicitud PUT a actualizar el contenido.",
+        "Añadir lógica de drag-and-drop usando HTML5 Drag & Drop API: establecer draggable=true en tarjetas, manejar eventos dragstart, dragover y drop en las columnas, y actualizar la posición interna de las tarjetas en el DOM.",
+        "Al soltar una tarjeta en otra columna, enviar una solicitud PUT a '/api/tasks/<id>' con el nuevo estado basado en la columna objetivo.",
+        "Implementar funciones JavaScript para cargar todas las tareas al iniciar la página mediante GET '/api/tasks', y renderizarlas en sus columnas correspondientes.",
+        "Incluir manejo de errores en cada llamada fetch: mostrar alertas o mensajes temporales si la API devuelve error.",
+        "Aplicar estilos CSS minimalistas pero claros: tarjetas con sombra, bordes redondeados, colores diferenciadores por columna, y transiciones suaves durante drag-and-drop."
       ]
     }
   ]
